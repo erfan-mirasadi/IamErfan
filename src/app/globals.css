@@ -1,10 +1,21 @@
 @import "tailwindcss";
 
+@import url("https://fonts.googleapis.com/css2?family=VT323&family=Vazirmatn:wght@100..900&display=swap");
+
+:root {
+  --font-vt323: "VT323", Vazirmatn;
+}
+
+@theme {
+  --font-vt323: var(--font-vt323);
+}
+
 html,
 body,
 #__next {
   height: 100%;
 }
+
 * {
   box-sizing: border-box;
 }

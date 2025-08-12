@@ -11,6 +11,9 @@
   "dependencies": {
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.3.0",
+    "@theatre/core": "^0.7.2",
+    "@theatre/r3f": "^0.7.2",
+    "@theatre/studio": "^0.7.2",
     "next": "15.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
