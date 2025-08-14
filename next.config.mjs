@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   experimental: {
     // Reduce bundle size by optimizing common libs
     optimizePackageImports: [

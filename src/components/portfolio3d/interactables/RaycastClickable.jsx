@@ -1,62 +1,98 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-export default function RaycastClickable({ targetName, onClick, children }) {
+// Minimal: click anywhere on the named object triggers onClick. No visuals.
+export default function RaycastClickable({ targetName, onClick }) {
   const { camera, scene, gl } = useThree();
   const raycasterRef = useRef(new THREE.Raycaster());
   const mouseRef = useRef(new THREE.Vector2());
-  const hintGroupRef = useRef();
-  const [targetObj, setTargetObj] = useState(null);
-  const [visible, setVisible] = useState(false);
+  const hoveringRef = useRef(false);
 
-  const tempVec = useMemo(() => new THREE.Vector3(), []);
-
-  // Find target by name (once available)
-  useFrame(() => {
-    if (!targetObj) {
-      const obj = scene.getObjectByName(targetName);
-      if (obj) {
-        setTargetObj(obj);
-        setVisible(true);
-      }
-    }
-    if (targetObj && hintGroupRef.current) {
-      targetObj.getWorldPosition(tempVec);
-      hintGroupRef.current.position.copy(tempVec);
-    }
-  });
-
-  // Basic three.js raycasting on canvas click
   useEffect(() => {
-    const handleClick = (event) => {
-      if (!targetObj) return;
+    const isInsideCanvas = (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      return (
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom
+      );
+    };
+
+    const updateMouseRay = (event) => {
       const rect = gl.domElement.getBoundingClientRect();
       mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycasterRef.current.setFromCamera(mouseRef.current, camera);
-      const hits = raycasterRef.current.intersectObject(targetObj, true);
-      if (hits.length > 0) onClick?.(hits[0]);
     };
-    gl.domElement.addEventListener("click", handleClick);
-    return () => gl.domElement.removeEventListener("click", handleClick);
-  }, [camera, gl, targetObj, onClick]);
 
-  // Floating/bobbing animation for the hint
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    if (hintGroupRef.current) {
-      const offset = Math.sin(t * 2) * 0.05;
-      hintGroupRef.current.position.y += offset;
-      hintGroupRef.current.rotation.y = t * 0.8;
-    }
-  });
+    const findHit = () => {
+      const hitsAll = raycasterRef.current.intersectObjects(
+        scene.children,
+        true
+      );
+      const targetLc = (targetName || "").toLowerCase();
+      for (const hit of hitsAll) {
+        let obj = hit.object;
+        while (obj) {
+          const nameLc = (obj.name || "").toLowerCase();
+          if (nameLc === targetLc || nameLc.includes(targetLc)) {
+            return hit;
+          }
+          obj = obj.parent;
+        }
+      }
+      const exactTarget = scene.getObjectByName(targetName);
+      if (exactTarget) {
+        const hits = raycasterRef.current.intersectObject(exactTarget, true);
+        if (hits.length > 0) return hits[0];
+      }
+      return null;
+    };
 
-  return (
-    <group ref={hintGroupRef} visible={visible}>
-      {children}
-    </group>
-  );
+    const handlePointerDown = (event) => {
+      if (!isInsideCanvas(event)) return;
+      updateMouseRay(event);
+      const hit = findHit();
+      if (hit) onClick?.(hit);
+    };
+
+    const handlePointerMove = (event) => {
+      if (!isInsideCanvas(event)) {
+        if (hoveringRef.current) {
+          hoveringRef.current = false;
+          document.body.style.cursor = "";
+        }
+        return;
+      }
+      updateMouseRay(event);
+      const isHovering = !!findHit();
+      if (hoveringRef.current !== isHovering) {
+        hoveringRef.current = isHovering;
+        // Use body cursor so it works even if an overlay captures pointer events
+        document.body.style.cursor = isHovering ? "pointer" : "";
+      }
+    };
+
+    // Attach to window to bypass overlays (e.g., ScrollControls)
+    window.addEventListener("pointerdown", handlePointerDown, {
+      passive: true,
+      capture: true,
+    });
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+      capture: true,
+    });
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("pointermove", handlePointerMove);
+      // Always reset cursor on cleanup to avoid sticky pointer
+      document.body.style.cursor = "";
+    };
+  }, [camera, gl, scene, targetName, onClick]);
+
+  return null;
 }

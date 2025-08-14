@@ -3,51 +3,39 @@
 import { useGLTF } from "@react-three/drei";
 import { useLayoutEffect, useRef } from "react";
 
-export default function HouseModel(props) {
-  const { scene, nodes, materials } = useGLTF("/models/main.glb");
+// Preload Draco-compressed model FIRST (with local decoder path)
+useGLTF.preload("/models/main-draco.glb", "/draco/");
+
+export default function HouseModel({ onModelLoaded, ...props }) {
+  const { scene, nodes, materials } = useGLTF(
+    "/models/main-draco.glb",
+    "/draco/"
+  );
   const groupRef = useRef();
+  const loadedRef = useRef(false);
 
-  // بهینه‌سازی مدل بعد از لود - useLayoutEffect برای جلوگیری از flash
   useLayoutEffect(() => {
-    if (!scene) return;
+    if (!scene || loadedRef.current) return;
 
-    // بهینه‌سازی shadows و culling
-    scene.traverse((child) => {
-      if (child.isMesh) {
-        // فعال کردن shadows
-        child.castShadow = true;
-        child.receiveShadow = true;
+    loadedRef.current = true;
 
-        // بهینه‌سازی rendering
-        child.frustumCulled = true; // برعکس کد قبلی - این باید true باشه
-
-        // بهینه‌سازی materials
-        if (child.material) {
-          child.material.needsUpdate = false;
-        }
+    // Enable shadows on all meshes in the GLTF scene
+    scene.traverse((object) => {
+      const isRenderableMesh = object.isMesh || object.isSkinnedMesh;
+      if (isRenderableMesh) {
+        object.castShadow = true;
+        object.receiveShadow = true;
       }
     });
 
-    // Log موفقیت
-    console.log("✅ Heavy house model loaded and optimized");
+    console.log("[Model] ✅ main.glb loaded & optimized");
     console.log(`📊 Nodes: ${Object.keys(nodes || {}).length}`);
     console.log(`📊 Materials: ${Object.keys(materials || {}).length}`);
 
-    // Cleanup function
-    return () => {
-      // پاکسازی memory در صورت unmount
-      scene.traverse((child) => {
-        if (child.isMesh) {
-          child.geometry?.dispose();
-          if (Array.isArray(child.material)) {
-            child.material.forEach((material) => material.dispose());
-          } else {
-            child.material?.dispose();
-          }
-        }
-      });
-    };
-  }, [scene, nodes, materials]);
+    if (onModelLoaded) {
+      onModelLoaded();
+    }
+  }, [scene]); // فقط scene تو dependency
 
   return (
     <group ref={groupRef} {...props}>
@@ -55,6 +43,3 @@ export default function HouseModel(props) {
     </group>
   );
 }
-
-// Optional: enable if you want to prefetch the model ahead of time
-// useGLTF.preload("/models/main.glb");

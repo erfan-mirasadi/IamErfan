@@ -1,6 +1,5 @@
-@import "tailwindcss";
-
 @import url("https://fonts.googleapis.com/css2?family=VT323&family=Vazirmatn:wght@100..900&display=swap");
+@import "tailwindcss";
 
 :root {
   --font-vt323: "VT323", Vazirmatn;

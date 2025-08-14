@@ -13,14 +13,25 @@ export default function TerminalModal({
   const [dragging, setDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
+  const handleClose = () => {
+    const modal = modalRef.current;
+    if (!modal) return;
+    modal.style.transition = "transform 0.2s ease, opacity 0.2s ease";
+    modal.style.transform = "scale(0.9)";
+    modal.style.opacity = "0";
+    setTimeout(() => {
+      modal.style.display = "none";
+      if (onClose) onClose();
+    }, 200);
+  };
+
   const handleMouseDown = (e) => {
-    if (e.button === 0 && modalRef.current) {
-      setDragging(true);
-      dragOffset.current = {
-        x: e.clientX - position.x,
-        y: e.clientY - position.y,
-      };
-    }
+    if (e.button !== 0 || !modalRef.current) return;
+    setDragging(true);
+    dragOffset.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    };
   };
 
   useEffect(() => {
@@ -38,11 +49,7 @@ export default function TerminalModal({
     if (dragging) {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
-    } else {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
     }
-
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
@@ -53,43 +60,66 @@ export default function TerminalModal({
 
   return (
     <div
-      className={`${modalContainerClassName} fixed inset-0 flex items-center justify-center`}
+      className={`fixed inset-0 flex items-center justify-center ${modalContainerClassName}`}
     >
-      <div className="fixed inset-0 z-0 backdrop-blur-sm pointer-events-none" />
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-0 transition-all duration-300 backdrop-blur-xs pointer-events-none" />
+
+      {/* Modal */}
       <div
         ref={modalRef}
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transformOrigin: "top left",
         }}
-        className="relative z-10 min-w-[420px] max-w-[90vw] min-h-[320px] rounded-2xl shadow-md bg-gradient-to-r from-[#282c34] via-[#1f2227] to-[#282c34]"
+        className="relative z-10 min-w-[520px] max-w-[90vw] min-h-[320px] rounded-2xl shadow-md
+                   bg-gradient-to-r from-[#282c34] via-[#1f2227] to-[#282c34]"
       >
+        {/* Header */}
         <div
-          className="flex items-center h-8 px-4 rounded-t-2xl bg-gray-600 border-b border-[#1e1e1e] cursor-move select-none"
           onMouseDown={handleMouseDown}
+          className="flex items-center h-8 px-4 rounded-t-2xl bg-gray-600 border-b border-[#1e1e1e] cursor-move select-none relative"
         >
-          <div className="flex gap-2 items-center">
+          {/* Control buttons */}
+          <div className="flex gap-2 items-center z-20 relative">
+            {/* Close */}
             <span
-              className="w-3 h-3 rounded-full bg-[#fc5c5b] border border-[#d94f4e] shadow-sm cursor-pointer flex items-center justify-center relative"
               onClick={onClose}
               role="button"
               tabIndex={0}
+              className="w-3 h-3 rounded-full bg-[#fc5c5b] border border-[#d94f4e] shadow-sm
+                 cursor-pointer flex items-center justify-center text-[10px]"
             >
               ×
             </span>
-            <span className="w-3 h-3 rounded-full bg-[#fdbc40] border border-[#d9bb7a] shadow-sm"></span>
-            <span className="w-3 h-3 rounded-full bg-[#34c749] border border-[#2da742] shadow-sm"></span>
+
+            {/* Minimize */}
+            <span
+              onClick={() => handleClose()}
+              role="button"
+              tabIndex={0}
+              className="w-3 h-3 rounded-full bg-[#fdbc40] border border-[#d9bb7a] shadow-sm cursor-pointer"
+            />
+
+            {/* Maximize */}
+            <span className="w-3 h-3 rounded-full bg-[#34c749] border border-[#2da742] shadow-sm" />
           </div>
-          <div className="flex-1 text-center text-xs text-gray-400 font-mono tracking-wide">
-            Terminal — bash
+
+          {/* Title */}
+          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+            <span className="text-xs text-gray-400 font-mono tracking-wide">
+              Terminal — bash
+            </span>
           </div>
         </div>
+
+        {/* Content */}
         <div
-          className={`px-6 pt-4 pb-6 text-cyan-600 font-vt323 text-2xl whitespace-pre-line ${childrenClassName}`}
+          className={`px-6 pt-4 pb-6 text-white/80 font-vt323 font-bold text-2xl whitespace-pre-line ${childrenClassName}`}
           style={{ minHeight: 240 }}
         >
           {Array.isArray(children) ? (
-            <TypewriterScript script={children} speed={30} />
+            <TypewriterScript script={children} speed={50} />
           ) : (
             <TypewriterScript
               script={[
@@ -98,7 +128,7 @@ export default function TerminalModal({
                   text: typeof children === "string" ? children : "",
                 },
               ]}
-              speed={30}
+              speed={50}
             />
           )}
         </div>

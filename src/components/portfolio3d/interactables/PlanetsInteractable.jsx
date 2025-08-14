@@ -1,15 +1,26 @@
 "use client";
 
+import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
-import HintHalo from "./HintHalo";
+
+const defaultScript = [{ type: "normal", text: "I love nature\n" }];
 
 export default function PlanetsInteractable({
-  onActivate,
   targetName = "Planets",
+  scriptData = defaultScript,
+  modalContainerClassName = "",
+  childrenClassName = "",
 }) {
   return (
-    <RaycastClickable targetName={targetName} onClick={onActivate}>
-      <HintHalo color="#f59e0b" />
-    </RaycastClickable>
+    <RaycastClickable
+      targetName={targetName}
+      onClick={() => {
+        openModal({
+          scriptData,
+          modalContainerClassName,
+          childrenClassName,
+        });
+      }}
+    />
   );
 }

@@ -6,15 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "model:draco": "node scripts/build-draco.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.3.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@theatre/core": "^0.7.2",
     "@theatre/r3f": "^0.7.2",
     "@theatre/studio": "^0.7.2",
     "next": "15.4.6",
+    "postprocessing": "^6.37.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "three": "^0.179.1"
@@ -24,6 +27,8 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
+    "gltf-pipeline": "^4.3.0",
+    "gltfpack": "^0.24.0",
     "tailwindcss": "^4"
   }
 }
