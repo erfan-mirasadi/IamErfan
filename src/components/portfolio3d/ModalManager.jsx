@@ -35,10 +35,16 @@ export function openModal({
       {scriptData}
     </TerminalModal>
   );
+
+  // Simple: just add CSS class to disable interactions
+  document.body.classList.add("modal-open");
 }
 
 export function closeModal() {
   if (modalRootInstance) {
     modalRootInstance.render(null);
   }
+
+  // Simple: just remove CSS class to re-enable interactions
+  document.body.classList.remove("modal-open");
 }

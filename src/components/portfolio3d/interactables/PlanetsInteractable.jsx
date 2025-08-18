@@ -6,21 +6,15 @@ import RaycastClickable from "./RaycastClickable";
 const defaultScript = [{ type: "normal", text: "I love nature\n" }];
 
 export default function PlanetsInteractable({
-  targetName = "Planets",
+  targetName = "Plants",
   scriptData = defaultScript,
-  modalContainerClassName = "",
-  childrenClassName = "",
 }) {
   return (
     <RaycastClickable
       targetName={targetName}
-      onClick={() => {
-        openModal({
-          scriptData,
-          modalContainerClassName,
-          childrenClassName,
-        });
-      }}
+      onClick={() => openModal({ scriptData })}
+      markerPosition={{ x: 0.7, y: -0.2, z: 1.3 }}
+      markerSize={0.05}
     />
   );
 }

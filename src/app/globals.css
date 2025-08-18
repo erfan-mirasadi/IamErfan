@@ -26,3 +26,14 @@ body {
   color: #fff;
   overflow: hidden;
 }
+
+/* Modal open state - disable all interactions */
+body.modal-open {
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Re-enable pointer events for modal itself */
+body.modal-open .modal-container {
+  pointer-events: auto !important;
+}

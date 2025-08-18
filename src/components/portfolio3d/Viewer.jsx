@@ -46,11 +46,10 @@ function AnimatedScene() {
   return (
     <>
       <PerspectiveCamera theatreKey="Camera" makeDefault />
-      <Environment preset="night" background />
+      <Environment preset="sunset" background />
     </>
   );
 }
-
 export default function PortfolioViewer() {
   const [ready, setReady] = useState(false);
   // Configure DRACO decoder path once
@@ -58,39 +57,32 @@ export default function PortfolioViewer() {
     const draco = new DRACOLoader();
     draco.setDecoderPath("/draco/");
   }, []);
+  const canvasProps = {
+    shadows: true,
+    dpr: [1, 1],
+    gl: {
+      antialias: false,
+      preserveDrawingBuffer: false,
+      powerPreference: "high-performance",
+      shadowMapEnabled: true,
+      shadowMapType: THREE.PCFSoftShadowMap,
+      // toneMapping: THREE.ACESFilmicToneMapping,
+      // toneMappingExposure: 0.9,
+    },
+  };
   if (!ready) {
     return (
-      // <div className="fixed inset-0 w-screen h-screen">
-      <Canvas
-        shadows={{ type: THREE.BasicShadowMap }}
-        dpr={[1, 1]}
-        gl={{
-          antialias: false,
-          preserveDrawingBuffer: false,
-          powerPreference: "high-performance",
-        }}
-      >
+      <Canvas {...canvasProps}>
         <AdaptiveDpr pixelated min={1} max={1} />
         <AdaptiveEvents />
         <Suspense fallback={null}>
           <HouseScene onModelLoaded={() => setReady(true)} />
         </Suspense>
       </Canvas>
-      // </div>
     );
   }
-
   return (
-    // <div className="fixed inset-0 w-screen h-screen">
-    <Canvas
-      shadows={{ type: THREE.BasicShadowMap }}
-      dpr={[1, 1]}
-      gl={{
-        antialias: false,
-        preserveDrawingBuffer: false,
-        powerPreference: "high-performance",
-      }}
-    >
+    <Canvas {...canvasProps}>
       <AdaptiveDpr pixelated min={1} max={1} />
       <AdaptiveEvents />
       <ScrollControls pages={val(sheet.sequence.pointer.length)} damping={0}>
@@ -103,6 +95,5 @@ export default function PortfolioViewer() {
         </SheetProvider>
       </ScrollControls>
     </Canvas>
-    // </div>
   );
 }

@@ -11,8 +11,6 @@ const defaultScript = [
 export default function BookInteractable({
   targetName = "Book",
   scriptData = defaultScript,
-  modalContainerClassName = "",
-  childrenClassName = "",
 }) {
   return (
     <RaycastClickable
@@ -20,10 +18,10 @@ export default function BookInteractable({
       onClick={() => {
         openModal({
           scriptData,
-          modalContainerClassName,
-          childrenClassName,
         });
       }}
+      markerPosition={{ x: -0.06, y: 0.16, z: 0 }}
+      markerSize={0.03}
     />
   );
 }

@@ -14,19 +14,13 @@ const defaultScript = [
 export default function BikeInteractable({
   targetName = "Bike",
   scriptData = defaultScript,
-  modalContainerClassName = "",
-  childrenClassName = "",
 }) {
   return (
     <RaycastClickable
       targetName={targetName}
-      onClick={() => {
-        openModal({
-          scriptData,
-          modalContainerClassName,
-          childrenClassName,
-        });
-      }}
+      onClick={() => openModal({ scriptData })}
+      markerPosition={{ x: -5, y: 63, z: -65 }}
+      markerSize={2.5}
     />
   );
 }

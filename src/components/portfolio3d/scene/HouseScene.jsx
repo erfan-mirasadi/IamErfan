@@ -1,21 +1,31 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import * as THREE from "three";
 import {
   Center,
   Html,
   useProgress,
   PerformanceMonitor,
 } from "@react-three/drei";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
+
+import {
+  EffectComposer,
+  Bloom,
+  Noise,
+  Vignette,
+} from "@react-three/postprocessing";
+
 import HouseModel from "./model/HouseModel";
 import DoorLockInteractable from "../interactables/DoorLockInteractable";
 import PlanetsInteractable from "../interactables/PlanetsInteractable";
 import BookInteractable from "../interactables/BookInteractable";
 import BodyBuldingInteractable from "../interactables/BodyBuldingInteractable";
 import BikeInteractable from "../interactables/BikeInteractable";
+import SetarInteractable from "../interactables/SetarInteractable";
+import ProjectInteractable from "../interactables/ProjectInteraxtable";
 
-// Loader according to drei docs: Html overlay + useProgress
+// Loader
 function CanvasLoader() {
   const { progress } = useProgress();
   return (
@@ -36,72 +46,111 @@ function CanvasLoader() {
 
 export default function HouseScene({ onModelLoaded }) {
   const [extraLightsOn, setExtraLightsOn] = useState(true);
+
   return (
     <Center>
       <PerformanceMonitor
         onDecline={() => setExtraLightsOn(false)}
         onIncline={() => setExtraLightsOn(true)}
       />
+
       {/* Sunset key light */}
       <directionalLight
         castShadow
-        color={"#ffb38a"}
-        intensity={2}
-        position={[-1.35, 8, 7]}
-        rotation={(0, -0.4399999999999996, 0)}
-        shadow-bias={-0.0006}
-        shadow-mapSize-width={468}
-        shadow-mapSize-height={468}
+        color={"#f2c183"}
+        intensity={6}
+        position={[-2, 5, 6.5]}
+        shadow-bias={-0.01}
+        shadow-mapSize-width={1250}
+        shadow-mapSize-height={1250}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={10}
+        shadow-camera-bottom={-10}
+        shadow-camera-near={0.1}
+        shadow-camera-far={30}
       />
+
+      {/* Sun sample out of the window */}
+      <mesh name="sun" position={[-3.8, 2, 14]} rotation={[0, 3.1, 0]}>
+        <sphereGeometry args={[2, 32, 32]} />
+        <meshStandardMaterial
+          color="#fcfaea"
+          emissive="#fcfaea"
+          emissiveIntensity={30}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Fake volumetric cone */}
+      <mesh position={[-3.9, 1.5, 11.9]} rotation={[0, 0, 0]}>
+        <coneGeometry args={[3, 4.7, 15, 1, true]} />
+        <meshBasicMaterial
+          transparent
+          opacity={0.09}
+          depthWrite={false}
+          // side={THREE.DoubleSide}
+          color="#f2c183"
+        />
+      </mesh>
+
+      <rectAreaLight
+        width={5.8}
+        height={5.8}
+        color={"#f2c183"}
+        intensity={6}
+        position={[-3.8, 1.9, 12]}
+        castShadow={false}
+      />
+
       {/* Fill light */}
-      <ambientLight color={"#ffd9c2"} intensity={1} />
-      {/* Studio-like helper light (placeholder) */}
+      <ambientLight color={"#e8b880"} intensity={3} />
+
+      {/* Plant light */}
       <pointLight
-        color={"#ffd166"}
-        intensity={0.3}
+        color={"#f3e914"}
+        intensity={0.25}
         distance={2.5}
         decay={10}
         position={[-0.2, 1.8, -11.5]}
         castShadow={false}
         visible={extraLightsOn}
       />
-      <pointLight
-        color={"#fffff"}
-        intensity={1}
-        decay={4}
-        position={[-3.1, -0.1, 7]}
-        castShadow={false}
-        visible={extraLightsOn}
-      />
-      <pointLight
-        color={"#fffff"}
-        intensity={2}
-        decay={1.5}
-        position={[-3.1, -0.5, -3.1]}
-        castShadow={false}
-        visible={extraLightsOn}
-      />
+
       <Suspense fallback={<CanvasLoader />}>
         <HouseModel onModelLoaded={onModelLoaded} />
-        {/* Interactables (self-contained) */}
         <DoorLockInteractable />
         <PlanetsInteractable />
         <BookInteractable />
         <BodyBuldingInteractable />
         <BikeInteractable />
-        {/* Lightweight bloom for bright emissive parts only */}
+        <SetarInteractable />
+        <ProjectInteractable
+          targetName="Project_1"
+          markerPosition={{ x: 1, y: 0, z: 2 }}
+        />
+        <ProjectInteractable
+          targetName="Project_2"
+          markerPosition={{ x: -1, y: 0, z: 3 }}
+        />
+        <ProjectInteractable
+          targetName="Project_3"
+          markerPosition={{ x: 2, y: 1, z: -1 }}
+        />
+        <ProjectInteractable
+          targetName="Project_4"
+          markerPosition={{ x: -2, y: 0.5, z: 1 }}
+        />
+
+        {/* Simple effects */}
         <EffectComposer
           multisampling={0}
           disableNormalPass
           enabled={extraLightsOn}
-          resolutionScale={0.75}
         >
-          <Bloom
-            intensity={0.1}
-            mipmapBlur
-            luminanceThreshold={1}
-            luminanceSmoothing={0.5}
-          />
+          <Bloom intensity={0.1} />
+          <Noise opacity={0.04} />
+          <Vignette eskil={false} offset={0.1} darkness={0.9} />
         </EffectComposer>
       </Suspense>
     </Center>

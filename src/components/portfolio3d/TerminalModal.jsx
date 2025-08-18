@@ -60,7 +60,7 @@ export default function TerminalModal({
 
   return (
     <div
-      className={`fixed inset-0 flex items-center justify-center ${modalContainerClassName}`}
+      className={`fixed inset-0 flex items-center justify-center modal-container ${modalContainerClassName}`}
     >
       {/* Backdrop */}
       <div className="fixed inset-0 z-0 transition-all duration-300 backdrop-blur-xs pointer-events-none" />

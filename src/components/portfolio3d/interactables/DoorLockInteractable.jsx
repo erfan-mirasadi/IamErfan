@@ -24,8 +24,12 @@ export default function DoorLockInteractable({
     <RaycastClickable
       targetName={targetName}
       onClick={() => {
-        openModal(scriptData);
+        openModal({
+          scriptData,
+        });
       }}
+      markerPosition={{ x: 0.01, y: 0.26, z: 0.029 }} // موقعیت ساده و نزدیک مرکز صحنه برای تست
+      markerSize={0.03}
     />
   );
 }

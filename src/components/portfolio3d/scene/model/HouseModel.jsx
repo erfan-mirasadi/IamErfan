@@ -35,7 +35,7 @@ export default function HouseModel({ onModelLoaded, ...props }) {
     if (onModelLoaded) {
       onModelLoaded();
     }
-  }, [scene]); // فقط scene تو dependency
+  }, [scene, nodes]); // Added nodes to dependency(check later)
 
   return (
     <group ref={groupRef} {...props}>

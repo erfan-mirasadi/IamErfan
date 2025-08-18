@@ -11,19 +11,13 @@ const defaultScript = [
 export default function BodyBuldingInteractable({
   targetName = "BodyBulding",
   scriptData = defaultScript,
-  modalContainerClassName = "",
-  childrenClassName = "",
 }) {
   return (
     <RaycastClickable
       targetName={targetName}
-      onClick={() => {
-        openModal({
-          scriptData,
-          modalContainerClassName,
-          childrenClassName,
-        });
-      }}
+      onClick={() => openModal({ scriptData })}
+      markerPosition={{ x: 0.2, y: 0.5, z: -0.5 }}
+      markerSize={0.08}
     />
   );
 }
