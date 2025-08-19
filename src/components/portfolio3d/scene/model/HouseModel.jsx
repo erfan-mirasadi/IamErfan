@@ -3,43 +3,24 @@
 import { useGLTF } from "@react-three/drei";
 import { useLayoutEffect, useRef } from "react";
 
-// Preload Draco-compressed model FIRST (with local decoder path)
+// Preload Draco-compressed model
 useGLTF.preload("/models/main-draco.glb", "/draco/");
 
-export default function HouseModel({ onModelLoaded, ...props }) {
-  const { scene, nodes, materials } = useGLTF(
-    "/models/main-draco.glb",
-    "/draco/"
-  );
-  const groupRef = useRef();
+export default function HouseModel(props) {
+  const { scene } = useGLTF("/models/main-draco.glb", "/draco/");
   const loadedRef = useRef(false);
 
   useLayoutEffect(() => {
     if (!scene || loadedRef.current) return;
-
     loadedRef.current = true;
-
-    // Enable shadows on all meshes in the GLTF scene
     scene.traverse((object) => {
-      const isRenderableMesh = object.isMesh || object.isSkinnedMesh;
-      if (isRenderableMesh) {
+      if (object.isMesh) {
         object.castShadow = true;
         object.receiveShadow = true;
       }
     });
-
     console.log("[Model] ✅ main.glb loaded & optimized");
-    console.log(`📊 Nodes: ${Object.keys(nodes || {}).length}`);
-    console.log(`📊 Materials: ${Object.keys(materials || {}).length}`);
+  }, [scene]);
 
-    if (onModelLoaded) {
-      onModelLoaded();
-    }
-  }, [scene, nodes]); // Added nodes to dependency(check later)
-
-  return (
-    <group ref={groupRef} {...props}>
-      <primitive object={scene} />
-    </group>
-  );
+  return <primitive object={scene} {...props} />;
 }

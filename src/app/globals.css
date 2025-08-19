@@ -9,6 +9,36 @@
   --font-vt323: var(--font-vt323);
 }
 
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-wave {
+  animation: wave 1s infinite ease-in-out;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.animate-scan {
+  background-size: 100% 200%;
+  animation: scan 3s linear infinite;
+}
+
 html,
 body,
 #__next {
@@ -35,5 +65,16 @@ body.modal-open {
 
 /* Re-enable pointer events for modal itself */
 body.modal-open .modal-container {
+  pointer-events: auto !important;
+}
+
+/* Project overlay - disable all interactions */
+body.project-overlay-open {
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Re-enable pointer events for project overlay itself */
+body.project-overlay-open .project-overlay-container {
   pointer-events: auto !important;
 }

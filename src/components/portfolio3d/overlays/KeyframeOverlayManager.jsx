@@ -17,29 +17,45 @@ export default function KeyframeOverlayManager() {
 
   useFrame(() => {
     const pos = scroll.offset * sequenceLength;
-    if (pos !== position) setPosition(pos);
+    if (pos !== position) {
+      setPosition(pos);
+    }
   });
 
-  const buffer = 0.15; // buffer for smooth fade-out
-  const activeCue = cues.find(
-    (c) => position >= c.start && position <= c.end + buffer
-  );
-  const isFadingOut = !!activeCue && position > activeCue.end;
+  const resolvedCues = useMemo(() => {
+    return cues.map((c) => {
+      const isNormalized = c.normalized === true;
+      const start = isNormalized ? c.start * sequenceLength : c.start;
+      const end = isNormalized ? c.end * sequenceLength : c.end;
+      return { ...c, _start: start, _end: end };
+    });
+  }, [cues, sequenceLength]);
 
-  if (!activeCue) return null;
+  const activeCues = resolvedCues.filter((c) => {
+    return position >= c._start && position <= c._end;
+  });
 
-  const Component = activeCue.component;
+  if (activeCues.length === 0) return null;
 
   return (
-    <Html fullscreen transform={false} pointerEvents={"none"}>
-      <div
-        style={{
-          opacity: isFadingOut ? 0 : 1,
-          transition: "opacity 400ms ease",
-        }}
-      >
-        <Component />
-      </div>
+    <Html
+      fullscreen
+      transform={false}
+      zIndexRange={[500, 0]}
+      style={{ pointerEvents: "none" }}
+    >
+      {activeCues.map((cue) => {
+        const Component = cue.component;
+        const allowPointerEvents = cue.pointerEvents === "auto";
+        return (
+          <div
+            key={cue.id}
+            style={{ pointerEvents: allowPointerEvents ? "auto" : "none" }}
+          >
+            <Component {...(cue.props || {})} />
+          </div>
+        );
+      })}
     </Html>
   );
 }
