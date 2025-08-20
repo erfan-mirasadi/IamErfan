@@ -5,10 +5,22 @@ import RaycastClickable from "./RaycastClickable";
 
 const defaultScript = [
   {
-    type: "normal",
-    text: "life is noting mean too mean without riding bikes\n",
+    type: "error",
+    wrong: "$ echo L",
+    correct: "Life feels different when you're on two wheels 🚴🏻",
   },
-  { type: "error", wrong: "hiii", correct: "I enjoy bikes " },
+  {
+    type: "normal",
+    text: "Cycling isn’t just a hobby",
+  },
+  {
+    type: "normal",
+    text: "it’s freedom, discipline, and pure joy",
+  },
+  {
+    type: "normal",
+    text: "Some of my best ideas came while I was on the road",
+  },
 ];
 
 export default function BikeInteractable({

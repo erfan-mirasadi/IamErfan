@@ -5,7 +5,7 @@ import { steps } from "./step";
 
 function RoadmapSidebarComponent({ activeStep = "intro" }) {
   return (
-    <div className="fixed right-8 top-1/2 -translate-y-1/2 z-[9999] flex flex-col items-center gap-8 pointer-events-none font-vt323 font-bold text-2xl">
+    <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col items-center gap-8 pointer-events-none font-vt323">
       {steps.map((step, index) => {
         const isActive = activeStep === step.id;
         const isCompleted = steps.findIndex((s) => s.id === activeStep) > index;
@@ -23,7 +23,7 @@ function RoadmapSidebarComponent({ activeStep = "intro" }) {
             )}
 
             <div
-              className={`relative w-7 h-7 rounded-full flex items-center justify-center transition-all duration-500 ${
+              className={`relative w-6 h-6 rounded-full flex items-center justify-center transition-all duration-500 ${
                 isActive
                   ? "bg-cyan-100 shadow-[0_0_15px_rgba(34,211,238,1)] scale-135"
                   : isCompleted
@@ -34,15 +34,15 @@ function RoadmapSidebarComponent({ activeStep = "intro" }) {
               {isActive && (
                 <>
                   <div className="absolute w-12 h-12 rounded-full border-2 border-cyan-400 opacity-40 animate-ping" />
-                  <div className="absolute w-16 h-16 rounded-full border border-cyan-500 opacity-20 animate-pulse" />
+                  <div className="absolute w-8 h-8 rounded-full border border-cyan-500 opacity-20 animate-pulse" />
                 </>
               )}
             </div>
 
             <span
-              className={`mt-2 font-bold tracking-wider uppercase font-semibold transition-colors duration-500 ${
+              className={`mt-1.5  font-bold tracking-wider uppercase font-semibold transition-all duration-800 ${
                 isActive
-                  ? "text-cyan-200 text-2xl drop-shadow-[0_0_6px_rgba(34,211,238,0.8)]"
+                  ? "text-cyan-200 font-bold text-2xl drop-shadow-[0_0_6px_rgba(34,211,238,0.8)]"
                   : isCompleted
                   ? "text-gary-500 text-sm"
                   : "text-gray-500 text-xl"

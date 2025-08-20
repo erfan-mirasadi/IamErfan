@@ -41,6 +41,8 @@ export default function HouseScene() {
         shadow-camera-right={10}
         shadow-camera-top={10}
         shadow-camera-bottom={-10}
+        shadow-camera-near={0.1}
+        shadow-camera-far={25}
       />
       <mesh name="sun" position={[-3.8, 2, 14]}>
         <sphereGeometry args={[2, 32, 32]} />

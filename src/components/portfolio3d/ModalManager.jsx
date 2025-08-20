@@ -38,6 +38,28 @@ export function openModal({
 
   // Simple: just add CSS class to disable interactions
   document.body.classList.add("modal-open");
+
+  // غیرفعال کردن کلیک‌ها روی کل صفحه
+  document.addEventListener("click", blockClicks, true);
+  document.addEventListener("mousedown", blockClicks, true);
+  document.addEventListener("mouseup", blockClicks, true);
+}
+
+// تابع برای مسدود کردن کلیک‌ها
+function blockClicks(e) {
+  // اگر کلیک روی modal یا فرزندان آن باشد، اجازه بده
+  if (
+    e.target.closest('[data-modal="true"]') ||
+    e.target.closest(".modal-container")
+  ) {
+    return;
+  }
+
+  // در غیر این صورت، کلیک را متوقف کن
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+  return false;
 }
 
 export function closeModal() {
@@ -47,4 +69,9 @@ export function closeModal() {
 
   // Simple: just remove CSS class to re-enable interactions
   document.body.classList.remove("modal-open");
+
+  // حذف event listener ها
+  document.removeEventListener("click", blockClicks, true);
+  document.removeEventListener("mousedown", blockClicks, true);
+  document.removeEventListener("mouseup", blockClicks, true);
 }

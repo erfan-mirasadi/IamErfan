@@ -4,16 +4,15 @@ import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
 const defaultScript = [
-  { type: "normal", text: "Welcome to my Life...\n" },
+  { type: "normal", text: "Welcome, traveler 🌌\n" },
   { type: "error", wrong: "my name i", correct: "Hello, I'm Erfan!" },
-  { type: "normal", text: "Take a walk with me through code and life :)" },
+  { type: "normal", text: "You just stepped into my world.\n" },
   {
     type: "error",
-    wrong: "$ echo 'Let",
-    correct: "Let's make something awesome!",
+    wrong: "undefined path",
+    correct: "Path found: Life × Code × Art",
   },
-  { type: "normal", text: "Token successfully generated\n" },
-  { type: "normal", text: "Access granted" },
+  { type: "normal", text: "Access granted - Let's begin." },
 ];
 
 export default function DoorLockInteractable({

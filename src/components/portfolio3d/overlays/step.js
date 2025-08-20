@@ -1,9 +1,10 @@
 export const steps = [
-  { id: "intro", label: "Intro", time: 0 },
-  { id: "door", label: "Door Lock", time: 1 },
-  { id: "planets", label: "Planets", time: 2 },
-  { id: "book", label: "Book", time: 3 },
-  { id: "bike", label: "Bike", time: 4 },
-  { id: "skills", label: "My Skills", time: 5.5 },
-  { id: "projects", label: "Projects", time: 9 },
+  { id: "intro", label: "Gate", time: 0 },
+  { id: "Key", label: "Key", time: 0.6 },
+  { id: "Garden", label: "Garden", time: 1.3 },
+  { id: "Art", label: "Art", time: 3 },
+  { id: "GYM", label: "GYM", time: 4 },
+  { id: "laboratory", label: "laboratory", time: 5.5 },
+  { id: "Workshop", label: "Workshop", time: 9 },
+  { id: "contact", label: "About", time: 9.9 },
 ];

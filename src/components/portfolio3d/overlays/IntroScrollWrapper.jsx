@@ -1,19 +1,16 @@
-export default function IntroScroll({ progress = 0 }) {
-  // Dynamic styles for fade and move up
-  const dynamicStyle = {
-    transform: `translateY(${-200 * progress}px)`,
-    opacity: 1 - progress,
-  };
+"use client";
 
+export default function IntroScrollWrapper({ activeStep = "intro" }) {
   return (
-    <div className="pointer-events-none select-none">
+    <div className="pointer-events-none select-none fixed top-0 left-0 w-full h-full">
       <div
-        className="backdrop-blur-xs border border-white/30 rounded-md absolute left-[85vw] top-[640px] -translate-x-1/2 z-[9999] p-3 scale-140"
-        style={dynamicStyle}
+        className={` absolute right-[81vw] top-[75px] -translate-x-1/2 z-[9999] p-3 scale-115 intro-scroll ${
+          activeStep === "intro" ? "active" : "inactive"
+        }`}
       >
         <div className="flex flex-col items-center gap-4 text-white/90">
           {/* Main scroll text */}
-          <div className="text-3xl font-vt323 tracking-wider text-center whitespace-nowrap">
+          <div className="text-xl font-vt323 tracking-wider text-center whitespace-nowrap">
             <span className=" uppercase bg-gradient-to-r from-white via-white/80 to-white/50 bg-clip-text text-transparent whitespace-nowrap">
               Scroll down
             </span>
@@ -26,7 +23,7 @@ export default function IntroScroll({ progress = 0 }) {
             <div className="relative w-12 h-16 rounded-full border-2 border-white/60 bg-black/20 backdrop-blur-sm flex items-start justify-center p-2">
               <div className="w-2 h-3 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500 animate-bounce shadow-lg" />
 
-              <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-white/40 animate-ping" />
+              {/* <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-white/40 animate-ping" /> */}
               <div
                 className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-white/40 animate-ping"
                 style={{ animationDelay: "0.5s" }}
@@ -44,22 +41,22 @@ export default function IntroScroll({ progress = 0 }) {
           </div>
 
           {/* Dots */}
-          <div className="flex gap-2 mt-2">
-            <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="flex gap-2 mt-2 scale-190">
+            <div className="w-1 h-1 rounded-full bg-cyan-300 animate-pulse" />
             <div
-              className="w-1 h-1 rounded-full bg-blue-500 animate-pulse"
+              className="w-1 h-1 rounded-full bg-blue-300 animate-pulse"
               style={{ animationDelay: "0.3s" }}
             />
             <div
-              className="w-1 h-1 rounded-full bg-purple-600 animate-pulse"
+              className="w-1 h-1 rounded-full bg-purple-500 animate-pulse"
               style={{ animationDelay: "0.6s" }}
             />
           </div>
 
           {/* Start Journey */}
-          <div className="text-lg font-vt323 uppercase text-center text-white/80 tracking-wide mt-2 whitespace-nowrap">
-            Start Journey
-          </div>
+          {/* <div className="text-2xl font-vt323 uppercase text-center text-white/80 tracking-wide  whitespace-nowrap">
+            Scroll down
+          </div> */}
         </div>
       </div>
     </div>

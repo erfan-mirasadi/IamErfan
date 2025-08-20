@@ -63,7 +63,11 @@ export default function TerminalModal({
       className={`fixed inset-0 flex items-center justify-center modal-container ${modalContainerClassName}`}
     >
       {/* Backdrop */}
-      <div className="fixed inset-0 z-0 transition-all duration-300 backdrop-blur-xs pointer-events-none" />
+      <div
+        className="fixed inset-0 z-0 transition-all duration-300 backdrop-blur-xs"
+        onClick={onClose}
+        style={{ pointerEvents: "auto" }}
+      />
 
       {/* Modal */}
       <div

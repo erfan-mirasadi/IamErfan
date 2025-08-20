@@ -9,10 +9,9 @@ import {
   AdaptiveDpr,
   AdaptiveEvents,
   useProgress,
-  // Loader, // Import the official Loader from drei
 } from "@react-three/drei";
 import * as THREE from "three";
-import HouseScene from "./scene/HouseScene"; // Your actual path
+import HouseScene from "./scene/HouseScene";
 import { getProject, val } from "@theatre/core";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import {
@@ -20,16 +19,21 @@ import {
   PerspectiveCamera,
   useCurrentSheet,
 } from "@theatre/r3f";
-
-// You should import your actual components and data here
-import animationState from "../../lib/Portfolio.theatre-project-state.json"; // Your actual path
-import KeyframeOverlayManager from "./overlays/KeyframeOverlayManager"; // Your actual path
-import RoadmapSidebar from "./overlays/RoadmapSidebar"; // Your actual path
-import { steps } from "./overlays/step"; // Your actual path
+import animationState from "../../lib/Portfolio.theatre-project-state.json";
+import RoadmapSidebar from "./overlays/RoadmapSidebar";
+import { steps } from "./overlays/step";
 import Loader from "./Loader";
+import IntroScrollWrapper from "./overlays/IntroScrollWrapper";
+import Hint from "./overlays/Hint";
+import ContactMe from "./overlays/ContactMe";
 
 const project = getProject("Portfolio", { state: animationState });
 const sheet = project.sheet("Scene");
+// Updated steps array to include contact step
+const updatedSteps = [
+  ...steps,
+  { id: "contact", time: val(sheet.sequence.pointer.length) - 0.1 }, // Appears near the end of the scroll
+];
 
 function AnimatedScene({ onActiveStepUpdate }) {
   const sheet = useCurrentSheet();
@@ -107,12 +111,14 @@ export default function PortfolioViewer() {
                 <Suspense fallback={null}>
                   <HouseScene />
                   <AnimatedScene onActiveStepUpdate={setActiveStep} />
-                  <KeyframeOverlayManager />
                 </Suspense>
               </SheetProvider>
             </ScrollControls>
           </Canvas>
+          <IntroScrollWrapper activeStep={activeStep} />
           <RoadmapSidebar activeStep={activeStep} />
+          <Hint activeStep={activeStep} />
+          <ContactMe activeStep={activeStep} />
         </div>
       )}
     </>

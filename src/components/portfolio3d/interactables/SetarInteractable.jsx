@@ -4,8 +4,19 @@ import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
 const defaultScript = [
-  { type: "normal", text: "I love setar books\n" },
-  { type: "error", wrong: "no no", correct: "I enjoy reading books" },
+  {
+    type: "normal",
+    text: "This is a Setar — a traditional Persian instrument",
+  },
+  { type: "normal", text: "When I play, the noise of life fades away" },
+  {
+    type: "normal",
+    text: "Music isn’t just sound to me",
+  },
+  {
+    type: "normal",
+    text: "it’s a form of meditation",
+  },
 ];
 
 export default function SetarInteractable({
