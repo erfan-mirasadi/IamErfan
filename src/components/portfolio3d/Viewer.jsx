@@ -109,7 +109,7 @@ export default function PortfolioViewer() {
             >
               <SheetProvider sheet={sheet}>
                 <Suspense fallback={null}>
-                  <HouseScene />
+                  <HouseScene activeStep={activeStep} />
                   <AnimatedScene onActiveStepUpdate={setActiveStep} />
                 </Suspense>
               </SheetProvider>

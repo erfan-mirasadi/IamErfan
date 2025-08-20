@@ -1,0 +1,27 @@
+{
+  "name": "CodeMonolith Portfolio",
+  "short_name": "CodeMonolith",
+  "description": "An immersive 3D portfolio experience built with Blender and modern web technologies",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "landscape-primary",
+  "icons": [
+    {
+      "src": "/images/IMG_6140.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/IMG_6140.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["portfolio", "3d", "art", "technology"],
+  "lang": "en",
+  "dir": "ltr"
+}

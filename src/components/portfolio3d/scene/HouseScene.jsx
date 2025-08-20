@@ -18,8 +18,9 @@ import BodyBuldingInteractable from "../interactables/BodyBuldingInteractable";
 import BikeInteractable from "../interactables/BikeInteractable";
 import SetarInteractable from "../interactables/SetarInteractable";
 import ProjectInteractable from "../interactables/ProjectInteractable";
+// import VideoTexture from "../overlays/VideoTexture";
 
-export default function HouseScene() {
+export default function HouseScene({ activeStep = "intro" }) {
   const [extraLightsOn, setExtraLightsOn] = useState(true);
 
   return (
@@ -84,16 +85,17 @@ export default function HouseScene() {
       {/* Main scene content that needs to be loaded */}
       <Suspense fallback={null}>
         <HouseModel />
-        <DoorLockInteractable />
-        <PlanetsInteractable />
-        <BookInteractable />
-        <BodyBuldingInteractable />
-        <BikeInteractable />
-        <SetarInteractable />
-        <ProjectInteractable targetName="Project_1" />
-        <ProjectInteractable targetName="Project_2" />
-        <ProjectInteractable targetName="Project_3" />
-        <ProjectInteractable targetName="Project_4" />
+        <DoorLockInteractable activeStep={activeStep} />
+        <PlanetsInteractable activeStep={activeStep} />
+        <BookInteractable activeStep={activeStep} />
+        <BodyBuldingInteractable activeStep={activeStep} />
+        <BikeInteractable activeStep={activeStep} />
+        <SetarInteractable activeStep={activeStep} />
+        <ProjectInteractable targetName="Project_1" activeStep={activeStep} />
+        <ProjectInteractable targetName="Project_2" activeStep={activeStep} />
+        <ProjectInteractable targetName="Project_3" activeStep={activeStep} />
+        <ProjectInteractable targetName="Project_4" activeStep={activeStep} />
+        {/* <VideoTexture /> */}
 
         <EffectComposer
           multisampling={0}

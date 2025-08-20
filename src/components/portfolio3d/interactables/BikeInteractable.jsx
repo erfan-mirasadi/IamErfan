@@ -26,13 +26,29 @@ const defaultScript = [
 export default function BikeInteractable({
   targetName = "Bike",
   scriptData = defaultScript,
+  activeStep = "intro",
 }) {
+  const shouldBeActive = activeStep === "GYM";
+
   return (
     <RaycastClickable
       targetName={targetName}
-      onClick={() => openModal({ scriptData })}
-      markerPosition={{ x: -5, y: 63, z: -65 }}
-      markerSize={2.5}
+      activeStep={activeStep}
+      isActive={shouldBeActive}
+      onClick={() => {
+        openModal({
+          scriptData,
+        });
+      }}
+      onPointerEnter={() => {
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerLeave={() => {
+        document.body.style.cursor = "";
+      }}
+      markerPosition={{ x: 15, y: 59, z: -95 }}
+      markerSize={2}
+      segments={35}
     />
   );
 }

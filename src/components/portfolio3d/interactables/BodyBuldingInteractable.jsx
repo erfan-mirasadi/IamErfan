@@ -22,11 +22,27 @@ const defaultScript = [
 export default function BodyBuldingInteractable({
   targetName = "BodyBulding",
   scriptData = defaultScript,
+  activeStep = "intro",
 }) {
+  // فقط در step "GYM" فعال باشد
+  const shouldBeActive = activeStep === "GYM";
+
   return (
     <RaycastClickable
       targetName={targetName}
-      onClick={() => openModal({ scriptData })}
+      activeStep={activeStep}
+      isActive={shouldBeActive}
+      onClick={() => {
+        openModal({
+          scriptData,
+        });
+      }}
+      onPointerEnter={() => {
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerLeave={() => {
+        document.body.style.cursor = "";
+      }}
       markerPosition={{ x: 0.2, y: 0.5, z: -0.5 }}
       markerSize={0.08}
     />

@@ -11,7 +11,10 @@ export default function TerminalModal({
   const modalRef = useRef(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const originalPosition = useRef({ x: 0, y: 0 });
+  const originalSize = useRef({ width: 0, height: 0 });
 
   const handleClose = () => {
     const modal = modalRef.current;
@@ -25,6 +28,51 @@ export default function TerminalModal({
     }, 200);
   };
 
+  const handleMaximize = () => {
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    if (!isMaximized) {
+      // ذخیره موقعیت و اندازه اصلی
+      originalPosition.current = { ...position };
+      originalSize.current = {
+        width: modal.offsetWidth,
+        height: modal.offsetHeight,
+      };
+
+      // بزرگ کردن modal (برای mobile محدودیت)
+      modal.style.transition = "all 0.3s ease";
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        modal.style.width = "95vw";
+        modal.style.height = "95vh";
+        modal.style.maxWidth = "95vw";
+        modal.style.maxHeight = "95vh";
+        setPosition({ x: 0, y: 0 });
+      } else {
+        modal.style.width = "100vw";
+        modal.style.height = "100vh";
+        modal.style.maxWidth = "100vw";
+        modal.style.maxHeight = "100vh";
+        setPosition({ x: 0, y: 0 });
+      }
+      setIsMaximized(true);
+    } else {
+      // برگرداندن به اندازه اصلی
+      modal.style.transition = "all 0.3s ease";
+      modal.style.width = originalSize.current.width + "px";
+      modal.style.height = originalSize.current.height + "px";
+      modal.style.maxWidth = "90vw";
+      modal.style.maxHeight = "90vh";
+
+      // برگرداندن موقعیت با delay برای جلوگیری از bug
+      setTimeout(() => {
+        setPosition(originalPosition.current);
+        setIsMaximized(false);
+      }, 300);
+    }
+  };
+
   const handleMouseDown = (e) => {
     if (e.button !== 0 || !modalRef.current) return;
     setDragging(true);
@@ -36,7 +84,7 @@ export default function TerminalModal({
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (dragging) {
+      if (dragging && !isMaximized) {
         setPosition({
           x: e.clientX - dragOffset.current.x,
           y: e.clientY - dragOffset.current.y,
@@ -47,14 +95,16 @@ export default function TerminalModal({
     const handleMouseUp = () => setDragging(false);
 
     if (dragging) {
-      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mousemove", handleMouseMove, {
+        passive: true,
+      });
       document.addEventListener("mouseup", handleMouseUp);
     }
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [dragging]);
+  }, [dragging, isMaximized]);
 
   if (!open) return null;
 
@@ -76,7 +126,7 @@ export default function TerminalModal({
           transform: `translate(${position.x}px, ${position.y}px)`,
           transformOrigin: "top left",
         }}
-        className="relative z-10 min-w-[520px] max-w-[90vw] min-h-[320px] rounded-2xl shadow-md
+        className="relative z-10 min-w-[320px] sm:min-w-[480px] md:min-w-[500px] lg:min-w-[620px] xl:min-w-[700px] max-w-[90vw] min-h-[240px] sm:min-h-[320px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] rounded-2xl shadow-md
                    bg-gradient-to-r from-[#282c34] via-[#1f2227] to-[#282c34]"
       >
         {/* Header */}
@@ -85,16 +135,16 @@ export default function TerminalModal({
           className="flex items-center h-8 px-4 rounded-t-2xl bg-gray-600 border-b border-[#1e1e1e] cursor-move select-none relative"
         >
           {/* Control buttons */}
-          <div className="flex gap-2 items-center z-20 relative">
+          <div className="flex gap-1.5 sm:gap-2 items-center z-20 relative group">
             {/* Close */}
             <span
               onClick={onClose}
               role="button"
               tabIndex={0}
-              className="w-3 h-3 rounded-full bg-[#fc5c5b] border border-[#d94f4e] shadow-sm
-                 cursor-pointer flex items-center justify-center text-[10px]"
+              className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#fc5c5b] border border-[#d94f4e] shadow-sm
+                 cursor-pointer flex items-center justify-center text-[8px] sm:text-[10px] text-black/40 font-bold leading-none"
             >
-              ×
+              <span className="opacity-0 group-hover:opacity-100">×</span>
             </span>
 
             {/* Minimize */}
@@ -102,11 +152,22 @@ export default function TerminalModal({
               onClick={() => handleClose()}
               role="button"
               tabIndex={0}
-              className="w-3 h-3 rounded-full bg-[#fdbc40] border border-[#d9bb7a] shadow-sm cursor-pointer"
-            />
+              className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#fdbc40] border border-[#d9bb7a] shadow-sm cursor-pointer flex items-center justify-center text-[8px] sm:text-[12px] text-black/40 font-bold leading-none"
+            >
+              <span className="opacity-0 group-hover:opacity-100">-</span>
+            </span>
 
             {/* Maximize */}
-            <span className="w-3 h-3 rounded-full bg-[#34c749] border border-[#2da742] shadow-sm" />
+            <span
+              onClick={handleMaximize}
+              role="button"
+              tabIndex={0}
+              className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#34c749] border border-[#2da742] shadow-sm cursor-pointer flex items-center justify-center text-[8px] sm:text-[10px] text-black/40 font-bold leading-none"
+            >
+              <span className="opacity-0 group-hover:opacity-100">
+                {isMaximized ? "□" : "□"}
+              </span>
+            </span>
           </div>
 
           {/* Title */}

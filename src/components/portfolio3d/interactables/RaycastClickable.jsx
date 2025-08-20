@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import Marker from "./Marker";
 
 export default function RaycastClickable({
   targetName,
@@ -12,128 +13,90 @@ export default function RaycastClickable({
   markerPosition = { x: 0, y: 0, z: 0 },
   markerSize = 0.1,
   markerColor = "#39e7e8",
-  segments = 22,
+  segments = 28,
   isActive = true,
+  activeStep = "intro",
 }) {
   const { camera, scene, gl } = useThree();
   const raycasterRef = useRef(new THREE.Raycaster());
   const mouseRef = useRef(new THREE.Vector2());
-  const outerRingRef = useRef();
-  const innerRingRef = useRef();
-  const ringGroupRef = useRef();
-  const outerMaterialRef = useRef();
-  const innerMaterialRef = useRef();
   const isHoveringRef = useRef(false);
+  const ringGroupRef = useRef();
 
+  // Cache target object to avoid repeated scene searches
+  const targetObjectRef = useRef(null);
+
+  // This is the key fix - use the isActive prop directly
+  const shouldBeActive = isActive;
+
+  // Add the group pulsing animation back
   useFrame((state) => {
-    if (
-      !isActive ||
-      !outerRingRef.current ||
-      !innerRingRef.current ||
-      !ringGroupRef.current
-    ) {
-      return;
-    }
+    if (!shouldBeActive || !ringGroupRef.current) return;
+
     const t = state.clock.elapsedTime;
     const groupScale = 1 + Math.sin(t * 1.8) * 0.12;
     ringGroupRef.current.scale.setScalar(markerSize * groupScale);
-    outerRingRef.current.rotation.z = t * 0.6;
-    const outerPulse = 1 + Math.sin(t * 3.2) * 0.15;
-    outerRingRef.current.scale.setScalar(outerPulse);
-    innerRingRef.current.rotation.z = -t * 1.5;
-    const innerWave = 0.7 + Math.sin(t * 4.1 + Math.PI / 3) * 0.1;
-    innerRingRef.current.scale.setScalar(innerWave);
-    if (outerMaterialRef.current) {
-      outerMaterialRef.current.opacity = 0.6 + 0.3 * Math.sin(t * 2.3);
-      outerMaterialRef.current.size = 0.003 * (1 + 0.4 * Math.sin(t * 2.8));
-    }
-    if (innerMaterialRef.current) {
-      innerMaterialRef.current.opacity =
-        0.75 + 0.25 * Math.sin(t * 3.5 + Math.PI / 2);
-      innerMaterialRef.current.size = 0.002 * (1 + 0.3 * Math.sin(t * 4.2));
-    }
   });
+  // Optimized helper functions with useCallback
+  const isInsideCanvas = useCallback(
+    (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      return (
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom
+      );
+    },
+    [gl]
+  );
 
-  // هندسه حلقه
-  const ringGeometry = useMemo(() => {
-    const positions = new Float32Array(segments * 3);
-    for (let i = 0; i < segments; i++) {
-      const angle = (i / segments) * Math.PI * 2;
-      positions[i * 3] = Math.cos(angle);
-      positions[i * 3 + 1] = Math.sin(angle);
-      positions[i * 3 + 2] = 0;
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    return geo;
-  }, [segments]);
+  const updateMouseRay = useCallback(
+    (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+    },
+    [gl, camera]
+  );
 
-  // مواد
-  const outerMaterial = useMemo(() => {
-    return new THREE.PointsMaterial({
-      color: new THREE.Color(markerColor),
-      size: 0.003,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.8,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-  }, [markerColor]);
-
-  const innerMaterial = useMemo(() => {
-    return new THREE.PointsMaterial({
-      color: new THREE.Color(markerColor).multiplyScalar(1.2),
-      size: 0.002,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.9,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-  }, [markerColor]);
-
-  // Helper functions
-  const isInsideCanvas = (event) => {
-    const rect = gl.domElement.getBoundingClientRect();
-    return (
-      event.clientX >= rect.left &&
-      event.clientX <= rect.right &&
-      event.clientY >= rect.top &&
-      event.clientY <= rect.bottom
-    );
-  };
-
-  const updateMouseRay = (event) => {
-    const rect = gl.domElement.getBoundingClientRect();
-    mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    raycasterRef.current.setFromCamera(mouseRef.current, camera);
-  };
-
-  const findHit = () => {
+  // More efficient target finding with caching
+  const findHit = useCallback(() => {
     if (!targetName) return null;
+
+    // Use cached target object first
+    if (targetObjectRef.current) {
+      const hits = raycasterRef.current.intersectObject(
+        targetObjectRef.current,
+        true
+      );
+      if (hits.length > 0) return hits[0];
+    }
+
+    // Fallback to scene search if cache miss
     const hitsAll = raycasterRef.current.intersectObjects(scene.children, true);
     const targetLc = targetName.toLowerCase();
+
     for (const hit of hitsAll) {
       let obj = hit.object;
       while (obj) {
         const nameLc = (obj.name || "").toLowerCase();
-        if (nameLc === targetLc || nameLc.includes(targetLc)) return hit;
+        if (nameLc === targetLc || nameLc.includes(targetLc)) {
+          // Update cache
+          targetObjectRef.current = obj;
+          return hit;
+        }
         obj = obj.parent;
       }
     }
-    const exactTarget = scene.getObjectByName(targetName);
-    if (exactTarget) {
-      const hits = raycasterRef.current.intersectObject(exactTarget, true);
-      if (hits.length > 0) return hits[0];
-    }
-    return null;
-  };
 
-  // Click handler
+    return null;
+  }, [targetName, scene]);
+
+  // Optimized click handler
   useEffect(() => {
-    if (!isActive) return;
+    if (!shouldBeActive) return;
 
     const handlePointerDown = (event) => {
       if (!isInsideCanvas(event)) return;
@@ -146,12 +109,13 @@ export default function RaycastClickable({
       passive: true,
       capture: true,
     });
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
-  }, [isActive, camera, gl, scene, targetName, onClick]);
 
-  // Hover handler
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [shouldBeActive, isInsideCanvas, updateMouseRay, findHit, onClick]);
+
+  // Much more efficient hover handler
   useEffect(() => {
-    if (!isActive) {
+    if (!shouldBeActive) {
       if (isHoveringRef.current) {
         isHoveringRef.current = false;
         onPointerLeave?.();
@@ -160,9 +124,16 @@ export default function RaycastClickable({
       return;
     }
 
-    let throttleTimeout = null;
+    let rafId = null;
+    let lastMoveTime = 0;
 
     const handlePointerMove = (event) => {
+      const now = performance.now();
+
+      // Throttle to max 30fps for hover detection
+      if (now - lastMoveTime < 33) return;
+      lastMoveTime = now;
+
       if (!isInsideCanvas(event)) {
         if (isHoveringRef.current) {
           isHoveringRef.current = false;
@@ -172,26 +143,23 @@ export default function RaycastClickable({
         return;
       }
 
-      if (throttleTimeout) return;
+      // Use RAF for smooth hover detection
+      if (rafId) cancelAnimationFrame(rafId);
 
-      throttleTimeout = setTimeout(() => {
+      rafId = requestAnimationFrame(() => {
         updateMouseRay(event);
         const hit = findHit();
 
         if (hit && !isHoveringRef.current) {
           isHoveringRef.current = true;
-          console.log("HOVER ENTER:", targetName);
           onPointerEnter?.(hit);
           document.body.style.cursor = "pointer";
         } else if (!hit && isHoveringRef.current) {
           isHoveringRef.current = false;
-          console.log("HOVER LEAVE:", targetName);
           onPointerLeave?.();
           document.body.style.cursor = "";
         }
-
-        throttleTimeout = null;
-      }, 100);
+      });
     };
 
     if (onPointerEnter || onPointerLeave) {
@@ -205,19 +173,37 @@ export default function RaycastClickable({
       if (onPointerEnter || onPointerLeave) {
         window.removeEventListener("pointermove", handlePointerMove);
       }
-      if (throttleTimeout) clearTimeout(throttleTimeout);
+      if (rafId) cancelAnimationFrame(rafId);
       document.body.style.cursor = "";
     };
-  }, [isActive, camera, gl, scene, targetName, onPointerEnter, onPointerLeave]);
+  }, [
+    shouldBeActive,
+    isInsideCanvas,
+    updateMouseRay,
+    findHit,
+    onPointerEnter,
+    onPointerLeave,
+  ]);
 
-  // Position marker
+  // Optimized marker positioning with caching - EXACT COPY from original
   useEffect(() => {
-    if (!isActive || !targetName) {
-      if (ringGroupRef.current) ringGroupRef.current.visible = false;
+    if (!shouldBeActive || !targetName) {
+      if (ringGroupRef.current) {
+        ringGroupRef.current.visible = false;
+      }
+      targetObjectRef.current = null; // Clear cache
       return;
     }
 
-    const targetObject = scene.getObjectByName(targetName);
+    // Try to use cached target first
+    let targetObject = targetObjectRef.current;
+
+    // If not cached or name doesn't match, search again
+    if (!targetObject || targetObject.name !== targetName) {
+      targetObject = scene.getObjectByName(targetName);
+      targetObjectRef.current = targetObject; // Update cache
+    }
+
     if (targetObject && ringGroupRef.current && markerPosition) {
       targetObject.add(ringGroupRef.current);
       ringGroupRef.current.position.set(
@@ -231,28 +217,30 @@ export default function RaycastClickable({
       console.warn(
         `Target object "${targetName}" not found or invalid markerPosition`
       );
-      if (ringGroupRef.current) ringGroupRef.current.visible = false;
+      if (ringGroupRef.current) {
+        ringGroupRef.current.visible = false;
+      }
+      targetObjectRef.current = null;
     }
-  }, [isActive, scene, targetName, markerPosition, markerSize]);
+  }, [shouldBeActive, scene, targetName, markerPosition, markerSize]);
 
-  if (!isActive || !targetName) return null;
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = "";
+    };
+  }, []);
+
+  if (!shouldBeActive || !targetName) return null;
 
   return (
     <group ref={ringGroupRef}>
-      <points ref={outerRingRef} geometry={ringGeometry}>
-        <primitive
-          object={outerMaterial}
-          ref={outerMaterialRef}
-          attach="material"
-        />
-      </points>
-      <points ref={innerRingRef} geometry={ringGeometry}>
-        <primitive
-          object={innerMaterial}
-          ref={innerMaterialRef}
-          attach="material"
-        />
-      </points>
+      <Marker
+        markerSize={markerSize}
+        markerColor={markerColor}
+        segments={segments}
+        isActive={shouldBeActive}
+      />
     </group>
   );
 }

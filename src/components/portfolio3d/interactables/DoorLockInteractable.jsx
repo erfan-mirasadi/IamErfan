@@ -18,17 +18,28 @@ const defaultScript = [
 export default function DoorLockInteractable({
   targetName = "doorLock",
   scriptData = defaultScript,
+  activeStep = "intro", // اضافه کردن activeStep
 }) {
+  const shouldBeActive = activeStep === "Key";
   return (
     <RaycastClickable
       targetName={targetName}
+      activeStep={activeStep}
+      isActive={shouldBeActive}
       onClick={() => {
         openModal({
           scriptData,
         });
       }}
-      markerPosition={{ x: 0.01, y: 0.26, z: 0.029 }} // موقعیت ساده و نزدیک مرکز صحنه برای تست
-      markerSize={0.03}
+      onPointerEnter={() => {
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerLeave={() => {
+        document.body.style.cursor = "";
+      }}
+      markerPosition={{ x: 0.01, y: 0.24, z: 0.029 }} // موقعیت ساده و نزدیک مرکز صحنه برای تست
+      markerSize={0.02}
+      segments={32}
     />
   );
 }
