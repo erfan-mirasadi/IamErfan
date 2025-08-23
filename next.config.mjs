@@ -12,30 +12,30 @@ const nextConfig = {
       "zustand",
     ],
   },
-  async headers() {
-    return [
-      {
-        source: "/models/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-          // Let CDNs compress if available
-          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
-        ],
-      },
-      {
-        source: "/draco/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-    ];
-  },
+  // async headers() {
+  //   return [
+  //     {
+  //       source: "/models/:path*",
+  //       headers: [
+  //         {
+  //           key: "Cache-Control",
+  //           value: "public, max-age=31536000, immutable",
+  //         },
+  //         // Let CDNs compress if available
+  //         { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+  //       ],
+  //     },
+  //     {
+  //       source: "/draco/:path*",
+  //       headers: [
+  //         {
+  //           key: "Cache-Control",
+  //           value: "public, max-age=31536000, immutable",
+  //         },
+  //       ],
+  //     },
+  //   ];
+  // },
 };
 
 export default nextConfig;
