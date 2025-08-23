@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  metadataBase: new URL("https://erfan-3d-portfolio.vercel.app"),
-  title: "CodeMonolith",
+  metadataBase: new URL("https://iamerfan.me"),
+  title: "IamErfan",
   description:
     "An immersive 3D portfolio experience built with Blender and modern web technologies. Explore my creative universe in an interactive 3D house environment.",
   keywords: [
@@ -19,24 +19,24 @@ export const metadata = {
   publisher: "Erfan Mirasadi",
   robots: "index, follow",
   openGraph: {
-    title: "Erfan's 3D Portfolio House",
+    title: "IamErfan",
     description:
       "An immersive 3D portfolio experience built with Blender and modern web technologies",
     type: "website",
     locale: "en_US",
-    siteName: "CodeMonolith",
+    siteName: "IamErfan",
     images: [
       {
         url: "/images/IMG_6140.png",
         width: 1200,
         height: 630,
-        alt: "CodeMonolith",
+        alt: "IamErfan",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "CodeMonolith",
+    title: "IamErfan",
     description:
       "An immersive 3D portfolio experience built with Blender and modern web technologies",
     images: ["/images/IMG_6140.png"],
