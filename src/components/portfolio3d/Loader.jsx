@@ -38,17 +38,17 @@ export default function Loader() {
     >
       <div className="flex flex-col items-center">
         {/* متن LOADING */}
-        <div className="text-cyan-100 text-4xl md:text-6xl font-[vt323] tracking-widest mb-6 animate-pulse">
+        <div className="text-cyan-100 text-2xl xs:text-3xl sm:text-4xl md:text-6xl font-[vt323] tracking-widest mb-6 animate-pulse">
           LOADING
         </div>
 
         {/* Progress bar شبیه ویندوز 98 */}
         <div className="flex items-center gap-4">
-          <div className="flex gap-1 p-1 border-2 border-cyan-300 bg-black rounded">
+          <div className="flex gap-0.5 p-0.5 border-2 border-cyan-300 bg-black rounded">
             {Array.from({ length: totalBlocks }).map((_, i) => (
               <div
                 key={i}
-                className={`w-4 h-6 md:w-5 md:h-7 border border-cyan-500 ${
+                className={`w-2 h-3 xs:w-3 xs:h-4 sm:w-4 sm:h-6 md:w-5 md:h-7 border border-cyan-500 ${
                   i < filledBlocks
                     ? "bg-cyan-200 animate-[glitch_1s_infinite]"
                     : "bg-black"
