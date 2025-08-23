@@ -177,7 +177,7 @@ yarn model:draco      # Optimize 3D models
 
 - **Desktop-first** 3D experience
 - **Mobile-optimized** navigation
-- **Touch-friendly** interactions
+- **Touchh-friendly** interactions
 - **Adaptive performance** scaling
 
 ## 🎭 **Animation System**
