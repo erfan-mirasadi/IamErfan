@@ -1,6 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
+  metadataBase: new URL("https://erfan-3d-portfolio.vercel.app"),
   title: "CodeMonolith",
   description:
     "An immersive 3D portfolio experience built with Blender and modern web technologies. Explore my creative universe in an interactive 3D house environment.",
@@ -50,7 +51,12 @@ export const metadata = {
     ],
   },
   manifest: "/site.webmanifest",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
   themeColor: "#000000",
 };
 

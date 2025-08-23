@@ -4,7 +4,7 @@ export default function IntroScrollWrapper({ activeStep = "intro" }) {
   return (
     <div className="pointer-events-none select-none fixed top-0 left-0 w-full h-full">
       <div
-        className={` absolute right-[81vw] top-[75px] -translate-x-1/2 z-[9999] p-3 scale-115 intro-scroll ${
+        className={`absolute md:top-[75px] md:-translate-x-1/2  lg:left-[9vw] xl:left-[12vw] left-1/2 top-3/4 -translate-x-1/2 p-3 lg:scale-130 md:scale-115 intro-scroll ${
           activeStep === "intro" ? "active" : "inactive"
         }`}
       >

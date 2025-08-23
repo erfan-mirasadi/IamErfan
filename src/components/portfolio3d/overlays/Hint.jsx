@@ -79,7 +79,7 @@ export default function Hint({ activeStep = "intro" }) {
   return (
     <>
       {isActive && (
-        <div className="fixed bottom-10 left-10 font-vt323 text-xl">
+        <div className="fixed bottom-10 left-4 md:left-10 font-vt323 text-xl scale-75 md:scale-100">
           <div className="relative flex items-center h-12">
             {/* دکمه اصلی با جلوه درخشش */}
             <button

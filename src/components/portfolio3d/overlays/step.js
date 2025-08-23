@@ -4,7 +4,7 @@ export const steps = [
   { id: "Garden", label: "Garden", time: 1.3 },
   { id: "Art", label: "Art", time: 3 },
   { id: "GYM", label: "GYM", time: 4 },
-  { id: "laboratory", label: "laboratory", time: 5.5 },
+  { id: "laboratory", label: "Skills", time: 5.5 },
   { id: "Workshop", label: "Workshop", time: 9 },
-  { id: "contact", label: "About", time: 9.9 },
+  { id: "contact", label: "contact", time: 9.9 },
 ];

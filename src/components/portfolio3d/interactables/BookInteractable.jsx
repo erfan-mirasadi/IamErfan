@@ -26,9 +26,8 @@ const defaultScript = [
 export default function BookInteractable({
   targetName = "Book",
   scriptData = defaultScript,
-  activeStep = "intro", // default value اضافه کردم
+  activeStep = "intro",
 }) {
-  // فقط در step "Art" فعال باشد
   const shouldBeActive = activeStep === "Art";
 
   return (
@@ -42,11 +41,9 @@ export default function BookInteractable({
         });
       }}
       onPointerEnter={() => {
-        console.log("Book hover enter");
         document.body.style.cursor = "pointer";
       }}
       onPointerLeave={() => {
-        console.log("Book hover leave");
         document.body.style.cursor = "";
       }}
       markerPosition={{ x: -0.06, y: 0.16, z: 0 }}
