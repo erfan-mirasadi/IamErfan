@@ -18,8 +18,18 @@ import BikeInteractable from "../interactables/BikeInteractable";
 import SetarInteractable from "../interactables/SetarInteractable";
 import ProjectInteractable from "../interactables/ProjectInteractable";
 
-export default function HouseScene({ activeStep = "intro" }) {
+export default function HouseScene({ activeStep = "intro", onReady }) {
   const [extraLightsOn, setExtraLightsOn] = useState(true);
+  const [modelLoaded, setModelLoaded] = useState(false);
+
+  // trigger ready when model is loaded
+  const handleModelLoad = () => {
+    setModelLoaded(true);
+    if (onReady) {
+      // small delay to ensure everything is rendered
+      setTimeout(() => onReady(), 100);
+    }
+  };
 
   return (
     <Center>
@@ -82,7 +92,7 @@ export default function HouseScene({ activeStep = "intro" }) {
 
       {/* main scene content */}
       <Suspense fallback={null}>
-        <HouseModel />
+        <HouseModel onLoad={handleModelLoad} />
         <DoorLockInteractable activeStep={activeStep} />
         <PlanetsInteractable activeStep={activeStep} />
         <BookInteractable activeStep={activeStep} />

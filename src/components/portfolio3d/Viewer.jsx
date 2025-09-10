@@ -27,12 +27,13 @@ import IntroScrollWrapper from "./overlays/IntroScrollWrapper";
 import Hint from "./overlays/Hint";
 import ContactMe from "./overlays/ContactMe";
 
+// Initialize DRACO loader
+const draco = new DRACOLoader();
+draco.setDecoderPath("/draco/");
+
+// Initialize Theatre.js project and sheet outside component to avoid recreating
 const project = getProject("Portfolio", { state: animationState });
 const sheet = project.sheet("Scene");
-const updatedSteps = [
-  ...steps,
-  { id: "contact", time: val(sheet.sequence.pointer.length) - 0.1 }, // appears near end of scroll
-];
 
 function AnimatedScene({ onActiveStepUpdate }) {
   const sheet = useCurrentSheet();
@@ -44,6 +45,8 @@ function AnimatedScene({ onActiveStepUpdate }) {
     const sequenceLength = val(sheet.sequence.pointer.length);
     const position = scroll.offset * sequenceLength;
     sheet.sequence.position = position;
+
+    // Find active step
     let newActiveStep = "intro";
     for (let i = steps.length - 1; i >= 0; i--) {
       if (position >= steps[i].time) {
@@ -51,6 +54,7 @@ function AnimatedScene({ onActiveStepUpdate }) {
         break;
       }
     }
+
     if (newActiveStep !== currentActiveStep && onActiveStepUpdate) {
       onActiveStepUpdate(newActiveStep);
       currentActiveStep = newActiveStep;
@@ -67,36 +71,42 @@ function AnimatedScene({ onActiveStepUpdate }) {
 
 export default function PortfolioViewer() {
   const [activeStep, setActiveStep] = useState("intro");
+  const [sceneReady, setSceneReady] = useState(false);
   const { active } = useProgress();
+
   const isLoaded = !active;
+  const isFullyReady = isLoaded && sceneReady;
 
-  useMemo(() => {
-    const draco = new DRACOLoader();
-    draco.setDecoderPath("/draco/");
-  }, []);
+  const canvasProps = useMemo(
+    () => ({
+      shadows: true,
+      dpr: [1, 1],
+      gl: {
+        antialias: false,
+        preserveDrawingBuffer: false,
+        powerPreference: "high-performance",
+        shadowMapEnabled: true,
+        shadowMapType: THREE.PCFSoftShadowMap,
+      },
+    }),
+    []
+  );
 
-  const canvasProps = {
-    shadows: true,
-    dpr: [1, 1],
-    gl: {
-      antialias: false,
-      preserveDrawingBuffer: false,
-      powerPreference: "high-performance",
-      shadowMapEnabled: true,
-      shadowMapType: THREE.PCFSoftShadowMap,
-    },
-  };
+  const handleSceneReady = () => setSceneReady(true);
 
   return (
     <>
       <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
       <Loader />
+
       {isLoaded && (
         <div
           style={{
-            animation: "fadeIn 2s ease-out",
+            opacity: isFullyReady ? 1 : 0,
+            animation: isFullyReady ? "fadeIn 2s ease-out" : "none",
             width: "100%",
             height: "100vh",
+            transition: "opacity 0.3s ease-out",
           }}
         >
           <Canvas {...canvasProps}>
@@ -108,12 +118,17 @@ export default function PortfolioViewer() {
             >
               <SheetProvider sheet={sheet}>
                 <Suspense fallback={null}>
-                  <HouseScene activeStep={activeStep} />
+                  <HouseScene
+                    activeStep={activeStep}
+                    onReady={handleSceneReady}
+                  />
                   <AnimatedScene onActiveStepUpdate={setActiveStep} />
                 </Suspense>
               </SheetProvider>
             </ScrollControls>
           </Canvas>
+
+          {/* UI Overlays */}
           <IntroScrollWrapper activeStep={activeStep} />
           <RoadmapSidebar activeStep={activeStep} />
           <Hint activeStep={activeStep} />

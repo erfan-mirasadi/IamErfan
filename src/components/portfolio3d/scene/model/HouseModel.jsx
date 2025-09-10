@@ -6,7 +6,7 @@ import { useLayoutEffect, useRef } from "react";
 // preload the 3D model
 useGLTF.preload("/models/main-draco.glb", "/draco/");
 
-export default function HouseModel(props) {
+export default function HouseModel({ onLoad, ...props }) {
   const { scene } = useGLTF("/models/main-draco.glb", "/draco/");
   const loadedRef = useRef(false);
 
@@ -19,8 +19,12 @@ export default function HouseModel(props) {
         object.receiveShadow = true;
       }
     });
+    // trigger ready callback when model is fully processed
+    if (onLoad) {
+      onLoad();
+    }
     // console.log("[Model] ✅ main.glb loaded & optimized");
-  }, [scene]);
+  }, [scene, onLoad]);
 
   return <primitive object={scene} {...props} />;
 }
