@@ -24,7 +24,6 @@ export default function SetarInteractable({
   scriptData = defaultScript,
   activeStep = "intro",
 }) {
-  // فقط در step "Art" فعال باشد
   const shouldBeActive = activeStep === "Art";
 
   return (

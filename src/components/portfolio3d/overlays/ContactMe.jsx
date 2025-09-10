@@ -4,20 +4,20 @@ export default function ContactMe({ activeStep }) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Show only when activeStep is "contact"
+    // show only when activeStep is "contact"
     setIsVisible(activeStep === "contact");
   }, [activeStep]);
 
   return (
     <>
-      {/* Overlay background with blur */}
+      {/* overlay background with blur */}
       <div
         className={`fixed inset-0 transition-opacity duration-1000 ease-in-out z-20 pointer-events-none ${
           isVisible ? "opacity-100 backdrop-blur-xs" : "opacity-0 "
         }`}
       ></div>
 
-      {/* Main contact card */}
+      {/* main contact card */}
       <div
         className={`fixed left-1/2 top-1/2 transform -translate-x-1/2 transition-all duration-1000 ease-in-out ${
           isVisible

@@ -15,10 +15,9 @@ export default function Marker({
   const outerMaterialRef = useRef();
   const innerMaterialRef = useRef();
 
-  // Throttle refs for performance
   const lastCheckTime = useRef(0);
 
-  // Optimized animation frame - only run when active
+  // animation - only when active
   useFrame((state) => {
     if (!isActive) return;
 
@@ -27,7 +26,7 @@ export default function Marker({
 
     const t = state.clock.elapsedTime;
 
-    // Animation without group scaling (parent handles positioning)
+    // ring animations
     outerRingRef.current.rotation.z = t * 0.6;
     const outerPulse = 1 + Math.sin(t * 3.2) * 0.15;
     outerRingRef.current.scale.setScalar(outerPulse);
@@ -36,10 +35,9 @@ export default function Marker({
     const innerScale = 0.8 + Math.sin(t * 2.5) * 0.2;
     innerRingRef.current.scale.set(innerScale, innerScale, innerScale);
 
-    // Update materials less frequently for better performance
+    // update materials at 60fps
     const now = performance.now();
     if (now - lastCheckTime.current > 16) {
-      // ~60fps throttle
       if (outerMaterialRef.current) {
         outerMaterialRef.current.opacity = 0.6 + 0.3 * Math.sin(t * 2.3);
         outerMaterialRef.current.size = 0.003 * (1 + 0.4 * Math.sin(t * 2.8));
@@ -53,7 +51,7 @@ export default function Marker({
     }
   });
 
-  // Memoized geometry - only recreate when segments change
+  // geometry - recreate when segments change
   const ringGeometry = useMemo(() => {
     const positions = new Float32Array(segments * 3);
     for (let i = 0; i < segments; i++) {
@@ -67,7 +65,7 @@ export default function Marker({
     return geo;
   }, [segments]);
 
-  // Memoized materials - only recreate when color changes
+  // materials - recreate when color changes
   const materials = useMemo(() => {
     const baseColor = new THREE.Color(markerColor);
 
@@ -98,7 +96,6 @@ export default function Marker({
     return { outerMaterial, innerMaterial };
   }, [markerColor]);
 
-  // Expose refs for parent component
   const getGroupRef = () => ringGroupRef;
 
   return (
@@ -121,7 +118,6 @@ export default function Marker({
   );
 }
 
-// Export a hook for parent to access the group ref
 export function useMarkerRef() {
   const markerRef = useRef();
   return markerRef;

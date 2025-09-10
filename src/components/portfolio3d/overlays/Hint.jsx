@@ -1,25 +1,25 @@
 import { useState, useEffect } from "react";
 
-// متن کامل راهنما
+// hint message text
 const HINT_TEXT = " ⊙ Click on the glowing objects to explore... ";
-const TYPING_SPEED = 60; // میلی‌ثانیه
+const TYPING_SPEED = 60; // in milliseconds
 
 export default function Hint({ activeStep = "intro" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
-  const [autoOpenCount, setAutoOpenCount] = useState(0); // شمارنده باز شدن خودکار
+  const [autoOpenCount, setAutoOpenCount] = useState(0); // count auto opens
 
-  // بررسی اینکه آیا کامپوننت باید فعال باشد
+  // check if component should be active
   const isActive = ["Key", "Workshop"].includes(activeStep);
 
-  // Effect برای باز/بسته شدن خودکار در اولین بازدید (فقط 2 بار)
+  // auto open/close effect for first visit (only 2 times)
   useEffect(() => {
-    if (!isActive || autoOpenCount >= 2) return; // اگر غیرفعال است یا 2 بار باز شده، هیچ کاری نکن
+    if (!isActive || autoOpenCount >= 2) return; // skip if not active or already opened twice
 
     const openTimer = setTimeout(() => {
       setIsOpen(true);
       setAutoOpenCount((prev) => prev + 1);
-    }, 2000); // 2 ثانیه
+    }, 2000); // wait 2 sec
 
     const closeTimer = setTimeout(() => {
       setIsOpen(false);
@@ -31,32 +31,32 @@ export default function Hint({ activeStep = "intro" }) {
     };
   }, [isActive, autoOpenCount]);
 
-  // Effect برای بسته شدن خودکار بعد از کلیک کاربر
+  // auto close after user clicks
   useEffect(() => {
-    if (!isActive || !isOpen) return; // اگر غیرفعال است یا بسته است، هیچ کاری نکن
+    if (!isActive || !isOpen) return; // dont do anything if not active or closed
 
     const autoCloseTimer = setTimeout(() => {
       setIsOpen(false);
-    }, 5000); // 5 ثانیه
+    }, 5000); // close after 5 seconds
 
     return () => clearTimeout(autoCloseTimer);
   }, [isOpen, isActive]);
 
-  // Effect برای بسته کردن کامپوننت وقتی activeStep تغییر می‌کند
+  // close when activeStep changes
   useEffect(() => {
     setIsOpen(false);
   }, [activeStep]);
 
-  // Effect برای انیمیشن تایپ کردن متن
+  // typing animation effect
   useEffect(() => {
-    // اگر بسته است، متن را فورا پاک کن
+    // if closed, clear text immediately
     if (!isOpen) {
       setDisplayedText("");
       return;
     }
 
-    // اگر باز است، شروع به تایپ کن
-    // جلوگیری از تایپ مجدد اگر متن کامل شده
+    // if open, start typing
+    // prevent re-typing if text is already complete
     if (displayedText.length === HINT_TEXT.length) {
       return;
     }
@@ -81,7 +81,7 @@ export default function Hint({ activeStep = "intro" }) {
       {isActive && (
         <div className="fixed bottom-10 left-4 md:left-10 font-vt323 text-xl scale-75 md:scale-100">
           <div className="relative flex items-center h-12">
-            {/* دکمه اصلی با جلوه درخشش */}
+            {/* main button with glow effect */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className={`
@@ -97,7 +97,7 @@ export default function Hint({ activeStep = "intro" }) {
               ?
             </button>
 
-            {/* کانتینر متن که مثل ترمینال باز میشه */}
+            {/* text container that opens like terminal */}
             <div
               className={`
                 absolute left-6 h-full flex items-center bg-black 

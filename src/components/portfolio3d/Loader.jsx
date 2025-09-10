@@ -5,7 +5,7 @@ export default function Loader() {
   const { active, progress } = useProgress();
   const [fakeProgress, setFakeProgress] = useState(0);
 
-  // سقف fake progress مثلا 40
+  // fake progress limit
   const fakeLimit = 83;
 
   useEffect(() => {
@@ -13,7 +13,7 @@ export default function Loader() {
       const interval = setInterval(() => {
         setFakeProgress((prev) => {
           if (prev < fakeLimit) {
-            return prev + 2; // سرعت پر شدن fake
+            return prev + 2; // fake loading speed
           }
           return prev;
         });
@@ -23,7 +23,7 @@ export default function Loader() {
     }
   }, [active]);
 
-  // انتخاب بین fake و real progress
+  // choose between fake and real progress
   const displayProgress =
     progress < fakeLimit ? Math.max(progress, fakeProgress) : progress;
 
@@ -37,12 +37,12 @@ export default function Loader() {
       }`}
     >
       <div className="flex flex-col items-center">
-        {/* متن LOADING */}
+        {/* LOADING text */}
         <div className="text-cyan-100 text-2xl xs:text-3xl sm:text-4xl md:text-6xl font-[vt323] tracking-widest mb-6 animate-pulse">
           LOADING
         </div>
 
-        {/* Progress bar شبیه ویندوز 98 */}
+        {/* progress bar like windows 98 */}
         <div className="flex items-center gap-4">
           <div className="flex gap-0.5 p-0.5 border-2 border-cyan-300 bg-black rounded">
             {Array.from({ length: totalBlocks }).map((_, i) => (
@@ -56,14 +56,14 @@ export default function Loader() {
               ></div>
             ))}
           </div>
-          {/* درصد */}
+          {/* percentage */}
           {/* <div className="text-cyan-200 font-[vt323] text-xl md:text-2xl">
             {Math.round(displayProgress)}%
           </div> */}
         </div>
       </div>
 
-      {/* keyframes glitch */}
+      {/* glitch keyframes */}
       <style jsx>{`
         @keyframes glitch {
           0% {

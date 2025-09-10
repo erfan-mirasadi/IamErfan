@@ -9,7 +9,6 @@ import {
   Vignette,
 } from "@react-three/postprocessing";
 
-// Make sure your import paths are correct
 import HouseModel from "./model/HouseModel";
 import DoorLockInteractable from "../interactables/DoorLockInteractable";
 import PlanetsInteractable from "../interactables/PlanetsInteractable";
@@ -18,7 +17,6 @@ import BodyBuldingInteractable from "../interactables/BodyBuldingInteractable";
 import BikeInteractable from "../interactables/BikeInteractable";
 import SetarInteractable from "../interactables/SetarInteractable";
 import ProjectInteractable from "../interactables/ProjectInteractable";
-// import VideoTexture from "../overlays/VideoTexture";
 
 export default function HouseScene({ activeStep = "intro" }) {
   const [extraLightsOn, setExtraLightsOn] = useState(true);
@@ -30,7 +28,7 @@ export default function HouseScene({ activeStep = "intro" }) {
         onIncline={() => setExtraLightsOn(true)}
       />
 
-      {/* Lights and static meshes */}
+      {/* lighting and static meshes */}
       <directionalLight
         castShadow
         color={"#f2c183"}
@@ -82,7 +80,7 @@ export default function HouseScene({ activeStep = "intro" }) {
         visible={extraLightsOn}
       />
 
-      {/* Main scene content that needs to be loaded */}
+      {/* main scene content */}
       <Suspense fallback={null}>
         <HouseModel />
         <DoorLockInteractable activeStep={activeStep} />
@@ -95,7 +93,6 @@ export default function HouseScene({ activeStep = "intro" }) {
         <ProjectInteractable targetName="Project_2" activeStep={activeStep} />
         <ProjectInteractable targetName="Project_3" activeStep={activeStep} />
         <ProjectInteractable targetName="Project_4" activeStep={activeStep} />
-        {/* <VideoTexture /> */}
 
         <EffectComposer
           multisampling={0}

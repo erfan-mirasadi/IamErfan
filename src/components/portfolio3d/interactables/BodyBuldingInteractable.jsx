@@ -24,7 +24,6 @@ export default function BodyBuldingInteractable({
   scriptData = defaultScript,
   activeStep = "intro",
 }) {
-  // فقط در step "GYM" فعال باشد
   const shouldBeActive = activeStep === "GYM";
 
   return (

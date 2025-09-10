@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 
-const BASE_TYPING_SPEED = 15; // سرعت پایه تایپ (میلی‌ثانیه)
-const TYPING_SPEED_VARIANCE = 40; // نوسان سرعت تایپ (±میلی‌ثانیه)
+const BASE_TYPING_SPEED = 15; // base typing speed (ms)
+const TYPING_SPEED_VARIANCE = 40; // typing speed variation (±ms)
 
-const BASE_ERASE_SPEED = 60; // سرعت پایه پاک کردن (میلی‌ثانیه)
-const ERASE_SPEED_VARIANCE = 25; // نوسان سرعت پاک کردن (±میلی‌ثانیه)
+const BASE_ERASE_SPEED = 60; // base erase speed (ms) - bit slower 
+const ERASE_SPEED_VARIANCE = 25; // erase speed variation (±ms)
 
 function randomSpeed(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;

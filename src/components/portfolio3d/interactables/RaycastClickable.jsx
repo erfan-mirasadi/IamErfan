@@ -23,13 +23,11 @@ export default function RaycastClickable({
   const isHoveringRef = useRef(false);
   const ringGroupRef = useRef();
 
-  // Cache target object to avoid repeated scene searches
   const targetObjectRef = useRef(null);
 
-  // This is the key fix - use the isActive prop directly
   const shouldBeActive = isActive;
 
-  // Add the group pulsing animation back
+  // group pulsing animation
   useFrame((state) => {
     if (!shouldBeActive || !ringGroupRef.current) return;
 
@@ -37,7 +35,7 @@ export default function RaycastClickable({
     const groupScale = 1 + Math.sin(t * 1.8) * 0.12;
     ringGroupRef.current.scale.setScalar(markerSize * groupScale);
   });
-  // Optimized helper functions with useCallback
+
   const isInsideCanvas = useCallback(
     (event) => {
       const rect = gl.domElement.getBoundingClientRect();
@@ -61,11 +59,11 @@ export default function RaycastClickable({
     [gl, camera]
   );
 
-  // More efficient target finding with caching
+  // find target with caching
   const findHit = useCallback(() => {
     if (!targetName) return null;
 
-    // Use cached target object first
+    // use cached target first
     if (targetObjectRef.current) {
       const hits = raycasterRef.current.intersectObject(
         targetObjectRef.current,
@@ -74,7 +72,7 @@ export default function RaycastClickable({
       if (hits.length > 0) return hits[0];
     }
 
-    // Fallback to scene search if cache miss
+    // search scene if not cached
     const hitsAll = raycasterRef.current.intersectObjects(scene.children, true);
     const targetLc = targetName.toLowerCase();
 
@@ -83,7 +81,6 @@ export default function RaycastClickable({
       while (obj) {
         const nameLc = (obj.name || "").toLowerCase();
         if (nameLc === targetLc || nameLc.includes(targetLc)) {
-          // Update cache
           targetObjectRef.current = obj;
           return hit;
         }
@@ -94,7 +91,7 @@ export default function RaycastClickable({
     return null;
   }, [targetName, scene]);
 
-  // Optimized click handler
+  // click handler
   useEffect(() => {
     if (!shouldBeActive) return;
 
@@ -113,7 +110,7 @@ export default function RaycastClickable({
     return () => window.removeEventListener("pointerdown", handlePointerDown);
   }, [shouldBeActive, isInsideCanvas, updateMouseRay, findHit, onClick]);
 
-  // Much more efficient hover handler
+  // hover handler
   useEffect(() => {
     if (!shouldBeActive) {
       if (isHoveringRef.current) {
@@ -130,7 +127,7 @@ export default function RaycastClickable({
     const handlePointerMove = (event) => {
       const now = performance.now();
 
-      // Throttle to max 30fps for hover detection
+      // throttle to 30fps
       if (now - lastMoveTime < 33) return;
       lastMoveTime = now;
 
@@ -143,7 +140,7 @@ export default function RaycastClickable({
         return;
       }
 
-      // Use RAF for smooth hover detection
+      // smooth hover detection
       if (rafId) cancelAnimationFrame(rafId);
 
       rafId = requestAnimationFrame(() => {
@@ -185,23 +182,23 @@ export default function RaycastClickable({
     onPointerLeave,
   ]);
 
-  // Optimized marker positioning with caching - EXACT COPY from original
+  // marker positioning with caching
   useEffect(() => {
     if (!shouldBeActive || !targetName) {
       if (ringGroupRef.current) {
         ringGroupRef.current.visible = false;
       }
-      targetObjectRef.current = null; // Clear cache
+      targetObjectRef.current = null;
       return;
     }
 
-    // Try to use cached target first
+    // try cached target first
     let targetObject = targetObjectRef.current;
 
-    // If not cached or name doesn't match, search again
+    // search again if not cached
     if (!targetObject || targetObject.name !== targetName) {
       targetObject = scene.getObjectByName(targetName);
-      targetObjectRef.current = targetObject; // Update cache
+      targetObjectRef.current = targetObject;
     }
 
     if (targetObject && ringGroupRef.current && markerPosition) {
@@ -214,9 +211,9 @@ export default function RaycastClickable({
       ringGroupRef.current.scale.setScalar(markerSize);
       ringGroupRef.current.visible = true;
     } else {
-      console.warn(
-        `Target object "${targetName}" not found or invalid markerPosition`
-      );
+      // console.warn(
+      //   `Target object "${targetName}" not found or invalid markerPosition`
+      // );
       if (ringGroupRef.current) {
         ringGroupRef.current.visible = false;
       }
@@ -224,7 +221,6 @@ export default function RaycastClickable({
     }
   }, [shouldBeActive, scene, targetName, markerPosition, markerSize]);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       document.body.style.cursor = "";

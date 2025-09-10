@@ -18,7 +18,7 @@ const defaultScript = [
 export default function DoorLockInteractable({
   targetName = "doorLock",
   scriptData = defaultScript,
-  activeStep = "intro", // اضافه کردن activeStep
+  activeStep = "intro",
 }) {
   const shouldBeActive = activeStep === "Key";
   return (
@@ -37,7 +37,7 @@ export default function DoorLockInteractable({
       onPointerLeave={() => {
         document.body.style.cursor = "";
       }}
-      markerPosition={{ x: 0.01, y: 0.24, z: 0.029 }} // موقعیت ساده و نزدیک مرکز صحنه برای تست
+      markerPosition={{ x: 0.01, y: 0.24, z: 0.029 }} // simple position close to scene
       markerSize={0.02}
       segments={32}
     />

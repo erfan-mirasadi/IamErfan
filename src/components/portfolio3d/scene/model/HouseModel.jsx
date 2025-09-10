@@ -3,7 +3,7 @@
 import { useGLTF } from "@react-three/drei";
 import { useLayoutEffect, useRef } from "react";
 
-// Preload Draco-compressed model
+// preload the 3D model
 useGLTF.preload("/models/main-draco.glb", "/draco/");
 
 export default function HouseModel(props) {
@@ -19,7 +19,7 @@ export default function HouseModel(props) {
         object.receiveShadow = true;
       }
     });
-    console.log("[Model] ✅ main.glb loaded & optimized");
+    // console.log("[Model] ✅ main.glb loaded & optimized");
   }, [scene]);
 
   return <primitive object={scene} {...props} />;

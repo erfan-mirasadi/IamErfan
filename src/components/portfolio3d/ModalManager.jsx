@@ -1,4 +1,3 @@
-// ModalManager.js
 "use client";
 
 import { createRoot } from "react-dom/client";
@@ -36,18 +35,17 @@ export function openModal({
     </TerminalModal>
   );
 
-  // Simple: just add CSS class to disable interactions
+  // just add CSS class to disable interactions
   document.body.classList.add("modal-open");
 
-  // غیرفعال کردن کلیک‌ها روی کل صفحه
+  // disable clicks on entire page
   document.addEventListener("click", blockClicks, true);
   document.addEventListener("mousedown", blockClicks, true);
   document.addEventListener("mouseup", blockClicks, true);
 }
 
-// تابع برای مسدود کردن کلیک‌ها
+// function to block clicks
 function blockClicks(e) {
-  // اگر کلیک روی modal یا فرزندان آن باشد، اجازه بده
   if (
     e.target.closest('[data-modal="true"]') ||
     e.target.closest(".modal-container")
@@ -55,7 +53,7 @@ function blockClicks(e) {
     return;
   }
 
-  // در غیر این صورت، کلیک را متوقف کن
+  // otherwise, stop the click
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
@@ -67,10 +65,10 @@ export function closeModal() {
     modalRootInstance.render(null);
   }
 
-  // Simple: just remove CSS class to re-enable interactions
+  // just remove CSS class to re-enable interactions
   document.body.classList.remove("modal-open");
 
-  // حذف event listener ها
+  // remove event listeners
   document.removeEventListener("click", blockClicks, true);
   document.removeEventListener("mousedown", blockClicks, true);
   document.removeEventListener("mouseup", blockClicks, true);

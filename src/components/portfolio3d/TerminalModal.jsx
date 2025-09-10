@@ -33,14 +33,14 @@ export default function TerminalModal({
     if (!modal) return;
 
     if (!isMaximized) {
-      // ذخیره موقعیت و اندازه اصلی
+      // save original position and size
       originalPosition.current = { ...position };
       originalSize.current = {
         width: modal.offsetWidth,
         height: modal.offsetHeight,
       };
 
-      // بزرگ کردن modal (برای mobile محدودیت)
+      // expand modal (mobile restrictions)
       modal.style.transition = "all 0.3s ease";
       const isMobile = window.innerWidth <= 768;
       if (isMobile) {
@@ -58,14 +58,14 @@ export default function TerminalModal({
       }
       setIsMaximized(true);
     } else {
-      // برگرداندن به اندازه اصلی
+      // return to original size
       modal.style.transition = "all 0.3s ease";
       modal.style.width = originalSize.current.width + "px";
       modal.style.height = originalSize.current.height + "px";
       modal.style.maxWidth = "90vw";
       modal.style.maxHeight = "90vh";
 
-      // برگرداندن موقعیت با delay برای جلوگیری از bug
+      // restore position with delay to prevent bugs
       setTimeout(() => {
         setPosition(originalPosition.current);
         setIsMaximized(false);
@@ -119,7 +119,7 @@ export default function TerminalModal({
         style={{ pointerEvents: "auto" }}
       />
 
-      {/* Modal */}
+      {/* modal window */}
       <div
         ref={modalRef}
         style={{
@@ -129,14 +129,14 @@ export default function TerminalModal({
         className="relative z-10 min-w-[320px] sm:min-w-[480px] md:min-w-[500px] lg:min-w-[620px] xl:min-w-[700px] max-w-[90vw] min-h-[240px] sm:min-h-[320px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] rounded-2xl shadow-md
                    bg-gradient-to-r from-[#282c34] via-[#1f2227] to-[#282c34]"
       >
-        {/* Header */}
+        {/* window header */}
         <div
           onMouseDown={handleMouseDown}
           className="flex items-center h-8 px-4 rounded-t-2xl bg-gray-600 border-b border-[#1e1e1e] cursor-move select-none relative"
         >
-          {/* Control buttons */}
+          {/* window controls */}
           <div className="flex gap-1.5 sm:gap-2 items-center z-20 relative group">
-            {/* Close */}
+            {/* close button */}
             <span
               onClick={onClose}
               role="button"
@@ -147,7 +147,7 @@ export default function TerminalModal({
               <span className="opacity-0 group-hover:opacity-100">×</span>
             </span>
 
-            {/* Minimize */}
+            {/* minimize button */}
             <span
               onClick={() => handleClose()}
               role="button"
@@ -157,7 +157,7 @@ export default function TerminalModal({
               <span className="opacity-0 group-hover:opacity-100">-</span>
             </span>
 
-            {/* Maximize */}
+            {/* maximize button */}
             <span
               onClick={handleMaximize}
               role="button"
@@ -170,7 +170,7 @@ export default function TerminalModal({
             </span>
           </div>
 
-          {/* Title */}
+          {/* window title */}
           <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
             <span className="text-xs text-gray-400 font-mono tracking-wide">
               Terminal — bash
@@ -178,7 +178,7 @@ export default function TerminalModal({
           </div>
         </div>
 
-        {/* Content */}
+        {/* modal content */}
         <div
           className={`px-6 pt-4 pb-6 text-white/80 font-vt323 font-bold text-2xl whitespace-pre-line ${childrenClassName}`}
           style={{ minHeight: 240 }}

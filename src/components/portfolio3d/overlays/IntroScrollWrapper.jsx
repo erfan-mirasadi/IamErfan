@@ -9,21 +9,20 @@ export default function IntroScrollWrapper({ activeStep = "intro" }) {
         }`}
       >
         <div className="flex flex-col items-center gap-4 text-white/90">
-          {/* Main scroll text */}
+          {/* scroll text */}
           <div className="text-xl font-vt323 tracking-wider text-center whitespace-nowrap">
             <span className=" uppercase bg-gradient-to-r from-white via-white/80 to-white/50 bg-clip-text text-transparent whitespace-nowrap">
               Scroll down
             </span>
           </div>
 
-          {/* Scroll indicator */}
+          {/* scroll indicator */}
           <div className="relative">
             <div className="absolute inset-0 w-12 h-16 rounded-full bg-gradient-to-b from-cyan-400/20 to-purple-600/20 blur-sm animate-pulse" />
 
             <div className="relative w-12 h-16 rounded-full border-2 border-white/60 bg-black/20 backdrop-blur-sm flex items-start justify-center p-2">
               <div className="w-2 h-3 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500 animate-bounce shadow-lg" />
 
-              {/* <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-white/40 animate-ping" /> */}
               <div
                 className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-white/40 animate-ping"
                 style={{ animationDelay: "0.5s" }}
@@ -40,7 +39,7 @@ export default function IntroScrollWrapper({ activeStep = "intro" }) {
             />
           </div>
 
-          {/* Dots */}
+          {/* animated dots */}
           <div className="flex gap-2 mt-2 scale-190">
             <div className="w-1 h-1 rounded-full bg-cyan-300 animate-pulse" />
             <div
@@ -52,11 +51,6 @@ export default function IntroScrollWrapper({ activeStep = "intro" }) {
               style={{ animationDelay: "0.6s" }}
             />
           </div>
-
-          {/* Start Journey */}
-          {/* <div className="text-2xl font-vt323 uppercase text-center text-white/80 tracking-wide  whitespace-nowrap">
-            Scroll down
-          </div> */}
         </div>
       </div>
     </div>

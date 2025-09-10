@@ -57,7 +57,7 @@ function DesktopRoadmapComponent({ activeStep = "intro" }) {
   );
 }
 
-// Mobile version - top of screen
+// mobile version
 function MobileRoadmapComponent({ activeStep = "intro" }) {
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 flex flex-row items-center gap-5 pointer-events-none font-vt323 md:hidden scale-93 ">
@@ -112,7 +112,6 @@ function MobileRoadmapComponent({ activeStep = "intro" }) {
   );
 }
 
-// Main component that renders both versions
 function RoadmapSidebarComponent({ activeStep = "intro" }) {
   return (
     <>
@@ -122,5 +121,4 @@ function RoadmapSidebarComponent({ activeStep = "intro" }) {
   );
 }
 
-// Memoize the component to prevent unnecessary re-renders
 export default React.memo(RoadmapSidebarComponent);

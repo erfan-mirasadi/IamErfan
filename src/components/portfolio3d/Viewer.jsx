@@ -29,10 +29,9 @@ import ContactMe from "./overlays/ContactMe";
 
 const project = getProject("Portfolio", { state: animationState });
 const sheet = project.sheet("Scene");
-// Updated steps array to include contact step
 const updatedSteps = [
   ...steps,
-  { id: "contact", time: val(sheet.sequence.pointer.length) - 0.1 }, // Appears near the end of the scroll
+  { id: "contact", time: val(sheet.sequence.pointer.length) - 0.1 }, // appears near end of scroll
 ];
 
 function AnimatedScene({ onActiveStepUpdate }) {
