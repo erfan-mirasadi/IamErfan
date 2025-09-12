@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 // hint message text
-const HINT_TEXT = " ⊙ Click on the glowing objects to explore... ";
+const HINT_TEXT = " ⊙ See something glowing? Yep, click it! ";
 const TYPING_SPEED = 60; // in milliseconds
 
 export default function Hint({ activeStep = "intro" }) {

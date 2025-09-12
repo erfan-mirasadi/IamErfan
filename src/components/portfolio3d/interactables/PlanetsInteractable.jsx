@@ -8,10 +8,10 @@ const defaultScript = [
     type: "normal",
     text: "That’s my plants. I keep it alive… somehow ",
   },
-  { type: "normal", text: "Trees, mountains, fresh air—it's my reset button." },
+  { type: "normal", text: "Trees, mountains, fresh air—it's my reset button" },
   {
     type: "normal",
-    text: "I believe life makes more sense when you're close to the earth.",
+    text: "I believe life makes more sense when you're close to the nature.",
   },
 ];
 

@@ -6,17 +6,17 @@ import RaycastClickable from "./RaycastClickable";
 const defaultScript = [
   {
     type: "normal",
-    text: "This is a Setar — a traditional Persian instrument",
-  },
-  { type: "normal", text: "I don’t just code, I make some noise too." },
-  {
-    type: "normal",
-    text: "Music isn’t just sound to me",
+    text: "It's a Setar, a traditional Persian instrument.",
   },
   {
     type: "normal",
-    text: "it’s a form of meditation",
+    text: "I don’t only write codes, I also express with my soul.",
   },
+  {
+    type: "normal",
+    text: "That's how I find peace in music",
+  },
+  { type: "normal", text: "Code has logic, Music has soul.\n" },
 ];
 
 export default function SetarInteractable({

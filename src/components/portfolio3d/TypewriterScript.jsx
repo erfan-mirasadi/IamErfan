@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 const BASE_TYPING_SPEED = 15; // base typing speed (ms)
 const TYPING_SPEED_VARIANCE = 40; // typing speed variation (±ms)
 
-const BASE_ERASE_SPEED = 60; // base erase speed (ms) - bit slower 
+const BASE_ERASE_SPEED = 60; // base erase speed (ms) - bit slower
 const ERASE_SPEED_VARIANCE = 25; // erase speed variation (±ms)
 
 function randomSpeed(min, max) {
@@ -134,6 +134,36 @@ export default function TypewriterScript({ script, className = "" }) {
       typeWrong();
     }
 
+    function typeLink(text, url, cb) {
+      if (typeof text !== "string") text = "";
+      let idx = 0;
+
+      function next() {
+        if (idx >= text.length) {
+          setLines((prev) => [
+            ...prev,
+            <a
+              key={prev.length}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 underline hover:text-blue-300 cursor-pointer"
+            >
+              {currentLineRef.current ?? ""}
+            </a>,
+          ]);
+          setCurrentLine("");
+          timeoutRef.current = setTimeout(cb, randomSpeed(300, 600));
+          return;
+        }
+        appendChar(text[idx], () => {
+          idx++;
+          next();
+        });
+      }
+      next();
+    }
+
     function runScript() {
       if (part >= script.length) {
         setShowCursor(true);
@@ -152,6 +182,11 @@ export default function TypewriterScript({ script, className = "" }) {
         });
       } else if (item.type === "error") {
         typeError(item.wrong, item.correct, () => {
+          part++;
+          runScript();
+        });
+      } else if (item.type === "link") {
+        typeLink(item.text, item.url, () => {
           part++;
           runScript();
         });

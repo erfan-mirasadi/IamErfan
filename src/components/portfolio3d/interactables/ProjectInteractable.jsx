@@ -23,11 +23,20 @@ const projectScripts = {
     modalData: [
       {
         type: "normal",
-        text: "SUBLY Project , A modern platform to buy & manage digital subscriptions",
+        text: "SABLY Project , A modern platform to buy & manage digital subscriptions",
       },
       {
         type: "normal",
-        text: "Built with Next.js, Supabase, Tailwind — plus a full custom admin panel.",
+        text: "Built with Next.js, Supabase, tanstack-query, and TailwindCSS",
+      },
+      {
+        type: "normal",
+        text: "full custom admin panel.",
+      },
+      {
+        type: "link",
+        text: "🔗 Visit Project SABLY.ir",
+        url: "https://www.sably.ir/",
       },
     ],
     markerPosition: { x: 0, y: 0, z: -0.5 },
@@ -42,6 +51,11 @@ const projectScripts = {
       {
         type: "normal",
         text: "React + Vite + GSAP powering smooth UX with a golden aesthetic.",
+      },
+      {
+        type: "link",
+        text: "✨ Check it out LumiLuxe.studio",
+        url: "https://lumiluxe.studio/",
       },
     ],
     markerPosition: { x: 0, y: 0.2, z: -0.36 },

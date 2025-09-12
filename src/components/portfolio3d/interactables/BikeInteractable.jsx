@@ -6,7 +6,7 @@ import RaycastClickable from "./RaycastClickable";
 const defaultScript = [
   {
     type: "error",
-    wrong: "$ echo L",
+    wrong: "sudo npm i bike",
     correct: "Who needs therapy when you have a bike?",
   },
   {

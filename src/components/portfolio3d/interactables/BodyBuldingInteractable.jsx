@@ -4,20 +4,14 @@ import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
 const defaultScript = [
-  { type: "normal", text: "\n[weights waiting...]\n" },
+  { type: "normal", text: "[weights waiting...]\n" },
+  { type: "normal", text: "This is where I debug my body.\n" },
   {
-    type: "wrong",
+    type: "error",
     wrong: "git push",
     correct: "Pushing limits in training teaches me how to push limits in life",
   },
-  {
-    type: "normal",
-    text: "It’s not just about looks",
-  },
-  {
-    type: "normal",
-    text: "it’s discipline, adrenaline, and power",
-  },
+  { type: "normal", text: "You break it down, then build it up.\n" },
 ];
 
 export default function BodyBuldingInteractable({

@@ -6,19 +6,16 @@ import RaycastClickable from "./RaycastClickable";
 const defaultScript = [
   {
     type: "normal",
-    text: "Books are my way of moving without leaving the room\n",
+    text: "Books are the cornerstone of how I perceive life.\n",
   },
   {
     type: "normal",
-    text: "If a day passes without learning",
+    text: "Every book I open feels like adding a new library to my brain.\n",
   },
   {
-    type: "normal",
-    text: "Frontend frameworks come and go \n",
-  },
-  {
-    type: "normal",
-    correct: "But curiosity? That's forever.",
+    type: "error",
+    wrong: "404",
+    correct: "200 - Learning in progress...",
   },
 ];
 
