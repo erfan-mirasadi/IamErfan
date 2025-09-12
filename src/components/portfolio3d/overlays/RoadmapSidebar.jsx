@@ -40,7 +40,7 @@ function DesktopRoadmapComponent({ activeStep = "intro" }) {
             </div>
 
             <span
-              className={`mt-1.5  font-bold tracking-wider uppercase font-semibold transition-all duration-800 ${
+              className={`mt-1.5  tracking-wider uppercase font-semibold transition-all duration-800 ${
                 isActive
                   ? "text-cyan-200 font-bold text-2xl drop-shadow-[0_0_6px_rgba(34,211,238,0.8)]"
                   : isCompleted

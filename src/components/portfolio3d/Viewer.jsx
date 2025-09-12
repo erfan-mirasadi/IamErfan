@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState, useMemo } from "react";
+import Image from "next/image";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Environment,
@@ -26,12 +27,14 @@ import Loader from "./Loader";
 import IntroScrollWrapper from "./overlays/IntroScrollWrapper";
 import Hint from "./overlays/Hint";
 import ContactMe from "./overlays/ContactMe";
+import DirtyWindowOverlay from "./overlays/DirtyWindowOverlay";
+import SmoothKeyboardNavigation from "./SmoothKeyboardNavigation";
 
 // Initialize DRACO loader
 const draco = new DRACOLoader();
 draco.setDecoderPath("/draco/");
 
-// Initialize Theatre.js project and sheet outside component to avoid recreating
+// Initialize Theatre.js project and sheet
 const project = getProject("Portfolio", { state: animationState });
 const sheet = project.sheet("Scene");
 
@@ -106,10 +109,12 @@ export default function PortfolioViewer() {
             animation: isFullyReady ? "fadeIn 2s ease-out" : "none",
             width: "100%",
             height: "100vh",
+            position: "relative",
             transition: "opacity 0.3s ease-out",
           }}
         >
           <Canvas {...canvasProps}>
+            {/* <ContextLostHandler onContextLost={() => setSceneReady(false)} /> */}
             <AdaptiveDpr pixelated />
             <AdaptiveEvents />
             <ScrollControls
@@ -123,10 +128,47 @@ export default function PortfolioViewer() {
                     onReady={handleSceneReady}
                   />
                   <AnimatedScene onActiveStepUpdate={setActiveStep} />
+                  <SmoothKeyboardNavigation />
                 </Suspense>
               </SheetProvider>
             </ScrollControls>
           </Canvas>
+
+          {/* Dirty Window Overlay */}
+          <Image
+            src="/images/dirty-window-6.jpg"
+            alt="dirty-window-6"
+            fill
+            priority
+            style={{
+              objectFit: "cover",
+              objectPosition: "center",
+              pointerEvents: "none",
+              mixBlendMode: "multiply",
+              opacity: 0.05,
+              zIndex: 0,
+              transform: "scale(1.1)",
+            }}
+            sizes="100vw"
+          />
+          <Image
+            src="/images/dirty-window-3.jpg"
+            alt="dirty-window-3"
+            fill
+            priority
+            style={{
+              objectFit: "cover",
+              objectPosition: "center",
+              pointerEvents: "none",
+              mixBlendMode: "screen",
+              opacity: 0.15,
+              zIndex: 0,
+            }}
+            sizes="100vw"
+          />
+
+          {/* Dirty Glass Border Overlay just on the first step */}
+          <DirtyWindowOverlay activeStep={activeStep} />
 
           {/* UI Overlays */}
           <IntroScrollWrapper activeStep={activeStep} />

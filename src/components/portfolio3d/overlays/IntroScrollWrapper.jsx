@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 export default function IntroScrollWrapper({ activeStep = "intro" }) {
   return (
     <div className="pointer-events-none select-none fixed top-0 left-0 w-full h-full">
@@ -12,12 +14,38 @@ export default function IntroScrollWrapper({ activeStep = "intro" }) {
           {/* scroll text */}
           <div className="text-xl font-vt323 tracking-wider text-center whitespace-nowrap">
             <span className=" uppercase bg-gradient-to-r from-white via-white/80 to-white/50 bg-clip-text text-transparent whitespace-nowrap">
-              Scroll down
+              <span className="lg:hidden">Scroll down</span>
+              <span className="hidden lg:inline">Use arrow keys</span>
             </span>
           </div>
 
-          {/* scroll indicator */}
-          <div className="relative">
+          {/* Arrow Keys Image for desktop */}
+          <div className="hidden lg:block relative">
+            {/* Main arrow keys image with up/down animation */}
+            <div className="animate-bounce" style={{ animationDuration: "2s" }}>
+              <Image
+                src="/images/arrrowKeys.png"
+                alt="Arrow Keys"
+                width={120}
+                height={80}
+                className="pixelated opacity-85"
+                style={{ width: "auto", height: "auto" }}
+                priority
+              />
+
+              {/* Highlight overlay for up arrow key - moves with image */}
+              <div
+                className="absolute top-0 left-1/2 transform -translate-x-1/2 w-10 h-10 border-2 border-cyan-500 rounded animate-pulse scale-80"
+                style={{
+                  boxShadow:
+                    "0 0 10px rgba(34, 211, 238, 0.6), inset 0 0 10px rgba(34, 211, 238, 0.2)",
+                }}
+              ></div>
+            </div>
+          </div>
+
+          {/* scroll indicator - only for mobile/tablet */}
+          <div className="relative lg:hidden">
             <div className="absolute inset-0 w-12 h-16 rounded-full bg-gradient-to-b from-cyan-400/20 to-purple-600/20 blur-sm animate-pulse" />
 
             <div className="relative w-12 h-16 rounded-full border-2 border-white/60 bg-black/20 backdrop-blur-sm flex items-start justify-center p-2">
@@ -39,8 +67,8 @@ export default function IntroScrollWrapper({ activeStep = "intro" }) {
             />
           </div>
 
-          {/* animated dots */}
-          <div className="flex gap-2 mt-2 scale-190">
+          {/* animated dots - only for mobile/tablet */}
+          <div className="flex gap-2 mt-2 scale-190 lg:hidden">
             <div className="w-1 h-1 rounded-full bg-cyan-300 animate-pulse" />
             <div
               className="w-1 h-1 rounded-full bg-blue-300 animate-pulse"
