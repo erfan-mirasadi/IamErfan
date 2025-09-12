@@ -7,19 +7,15 @@ const defaultScript = [
   {
     type: "error",
     wrong: "$ echo L",
-    correct: "Life feels different when you're on two wheels 🚴🏻",
+    correct: "Who needs therapy when you have a bike?",
   },
   {
     type: "normal",
-    text: "Cycling isn’t just a hobby",
+    text: "Two wheels, endless possibilities.\n",
   },
   {
     type: "normal",
-    text: "it’s freedom, discipline, and pure joy",
-  },
-  {
-    type: "normal",
-    text: "Some of my best ideas came while I was on the road",
+    text: "My best ideas happen at 30km/h.\n",
   },
 ];
 

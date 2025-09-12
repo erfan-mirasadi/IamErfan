@@ -4,7 +4,12 @@ import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
 const defaultScript = [
-  { type: "normal", text: "The gym is my second home" },
+  { type: "normal", text: "\n[weights waiting...]\n" },
+  {
+    type: "wrong",
+    wrong: "git push",
+    correct: "Pushing limits in training teaches me how to push limits in life",
+  },
   {
     type: "normal",
     text: "It’s not just about looks",
@@ -12,10 +17,6 @@ const defaultScript = [
   {
     type: "normal",
     text: "it’s discipline, adrenaline, and power",
-  },
-  {
-    type: "normal",
-    text: "Pushing limits in training teaches me how to push limits in life",
   },
 ];
 

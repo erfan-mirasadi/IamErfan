@@ -6,7 +6,7 @@ import RaycastClickable from "./RaycastClickable";
 const defaultScript = [
   {
     type: "normal",
-    text: "If I'm not coding, you'll probably find me in nature.",
+    text: "That’s my plants. I keep it alive… somehow ",
   },
   { type: "normal", text: "Trees, mountains, fresh air—it's my reset button." },
   {

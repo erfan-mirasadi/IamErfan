@@ -26,16 +26,19 @@ export default function IntroScrollWrapper({ activeStep = "intro" }) {
               <Image
                 src="/images/arrrowKeys.png"
                 alt="Arrow Keys"
-                width={120}
+                width={140}
                 height={80}
                 className="pixelated opacity-85"
-                style={{ width: "auto", height: "auto" }}
+                style={{
+                  width: "160px",
+                  height: "80px",
+                }}
                 priority
               />
 
               {/* Highlight overlay for up arrow key - moves with image */}
               <div
-                className="absolute top-0 left-1/2 transform -translate-x-1/2 w-10 h-10 border-2 border-cyan-500 rounded animate-pulse scale-80"
+                className="absolute top-1 left-1/2 transform -translate-x-1/2 w-10 h-9 border-2 border-cyan-500 rounded animate-pulse scale-100"
                 style={{
                   boxShadow:
                     "0 0 10px rgba(34, 211, 238, 0.6), inset 0 0 10px rgba(34, 211, 238, 0.2)",

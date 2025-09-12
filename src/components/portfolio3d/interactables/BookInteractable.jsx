@@ -14,12 +14,11 @@ const defaultScript = [
   },
   {
     type: "normal",
-    text: "it feels like standing still in time\n",
+    text: "Frontend frameworks come and go \n",
   },
   {
-    type: "error",
-    wrong: "404",
-    correct: "Keep reading, keep evolving",
+    type: "normal",
+    correct: "But curiosity? That's forever.",
   },
 ];
 

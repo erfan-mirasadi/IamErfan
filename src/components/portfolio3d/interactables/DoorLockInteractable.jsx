@@ -4,15 +4,18 @@ import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
 const defaultScript = [
-  { type: "normal", text: "Welcome, traveler 🌌\n" },
-  { type: "error", wrong: "my name i", correct: "Hello, I'm Erfan!" },
-  { type: "normal", text: "You just stepped into my world.\n" },
+  { type: "normal", text: "hey...\n" },
+  { type: "error", wrong: "my name i", correct: "I'm Erfan" },
+  // {
+  //   type: "error",
+  //   wrong: "undefined path",
+  //   correct: "Path found: Life × Code × Art",
+  // },
+  { type: "error", wrong: "yarn dev", correct: "come on in" },
   {
-    type: "error",
-    wrong: "undefined path",
-    correct: "Path found: Life × Code × Art",
+    type: "normal",
+    text: "Let me show you around — each corner has own stories.",
   },
-  { type: "normal", text: "Access granted - Let's begin." },
 ];
 
 export default function DoorLockInteractable({
