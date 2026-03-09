@@ -30,6 +30,8 @@ import Hint from "./overlays/Hint";
 import ContactMe from "./overlays/ContactMe";
 import DirtyWindowOverlay from "./overlays/DirtyWindowOverlay";
 import SmoothKeyboardNavigation from "./SmoothKeyboardNavigation";
+import CameraDragOrbit from "./CameraDragOrbit";
+import DragHint from "./overlays/DragHint";
 
 // Uses the official Three.js setConsoleFunction API.
 const suppressedWarnings = ["Clock", "PCFSoftShadowMap"];
@@ -139,6 +141,7 @@ export default function PortfolioViewer() {
                   />
                   <AnimatedScene onActiveStepUpdate={setActiveStep} />
                   <SmoothKeyboardNavigation />
+                  <CameraDragOrbit />
                 </Suspense>
               </SheetProvider>
             </ScrollControls>
@@ -182,6 +185,7 @@ export default function PortfolioViewer() {
           <IntroScrollWrapper activeStep={activeStep} />
           <RoadmapSidebar activeStep={activeStep} />
           <Hint activeStep={activeStep} />
+          <DragHint activeStep={activeStep} />
           <ContactMe activeStep={activeStep} />
         </div>
       )}
