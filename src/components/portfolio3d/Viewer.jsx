@@ -12,6 +12,7 @@ import {
   useProgress,
 } from "@react-three/drei";
 import * as THREE from "three";
+import { setConsoleFunction } from "three";
 import HouseScene from "./scene/HouseScene";
 import { getProject, val } from "@theatre/core";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
@@ -30,6 +31,17 @@ import ContactMe from "./overlays/ContactMe";
 import DirtyWindowOverlay from "./overlays/DirtyWindowOverlay";
 import SmoothKeyboardNavigation from "./SmoothKeyboardNavigation";
 
+// Uses the official Three.js setConsoleFunction API.
+const suppressedWarnings = ["Clock", "PCFSoftShadowMap"];
+setConsoleFunction((type, message, ...params) => {
+  if (
+    type === "warn" &&
+    typeof message === "string" &&
+    suppressedWarnings.some((w) => message.includes(w))
+  )
+    return;
+  console[type](message, ...params);
+});
 // Initialize DRACO loader
 const draco = new DRACOLoader();
 draco.setDecoderPath("/draco/");
@@ -82,17 +94,15 @@ export default function PortfolioViewer() {
 
   const canvasProps = useMemo(
     () => ({
-      shadows: true,
+      shadows: { enabled: true, type: THREE.PCFShadowMap },
       dpr: [1, 1],
       gl: {
         antialias: false,
         preserveDrawingBuffer: false,
         powerPreference: "high-performance",
-        shadowMapEnabled: true,
-        shadowMapType: THREE.PCFSoftShadowMap,
       },
     }),
-    []
+    [],
   );
 
   const handleSceneReady = () => setSceneReady(true);
@@ -167,10 +177,8 @@ export default function PortfolioViewer() {
             sizes="100vw"
           />
 
-          {/* Dirty Glass Border Overlay just on the first step */}
-          <DirtyWindowOverlay activeStep={activeStep} />
-
           {/* UI Overlays */}
+          <DirtyWindowOverlay activeStep={activeStep} />
           <IntroScrollWrapper activeStep={activeStep} />
           <RoadmapSidebar activeStep={activeStep} />
           <Hint activeStep={activeStep} />

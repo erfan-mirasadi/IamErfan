@@ -26,7 +26,7 @@ export default function IntroScrollWrapper({ activeStep = "intro" }) {
               <Image
                 src="/images/arrrowKeys.png"
                 alt="Arrow Keys"
-                width={140}
+                width={160}
                 height={80}
                 className="pixelated opacity-85"
                 style={{

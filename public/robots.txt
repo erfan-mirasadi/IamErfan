@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /draco/
+Disallow: /models/
+
+Sitemap: https://iamerfan.me/sitemap.xml
