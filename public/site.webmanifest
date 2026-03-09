@@ -1,7 +1,7 @@
 {
-  "name": "CodeMonolith Portfolio",
-  "short_name": "CodeMonolith",
-  "description": "An immersive 3D portfolio experience built with Blender and modern web technologies",
+  "name": "Step Inside a 3D World — Erfan's Portfolio",
+  "short_name": "Erfan Mirasadi",
+  "description": "An award-winning 3D experience. Walk through a fully interactive 3D house built with Three.js, React & Blender. Explore projects, skills, and stories in an immersive WebGL experience — by Erfan Mirasadi.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

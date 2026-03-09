@@ -2,43 +2,76 @@ import "./globals.css";
 
 export const metadata = {
   metadataBase: new URL("https://iamerfan.me"),
-  title: "IamErfan",
+  title: {
+    default: "Step Inside a 3D World — Erfan's Portfolio",
+    template: "%s | Erfan Mirasadi",
+  },
   description:
-    "An immersive 3D portfolio experience built with Blender and modern web technologies. Explore my creative universe in an interactive 3D house environment.",
+    "An award-winning 3D experience. Walk through a fully interactive 3D house built with Three.js, React & Blender. Explore projects, skills, and stories in an immersive WebGL experience — by Erfan Mirasadi.",
   keywords: [
+    "Erfan Mirasadi",
+    "Erfan",
+    "Award-Winning Portfolio",
+    "IamErfan",
+    "iamerfan.me",
+    "Creative Developer",
     "3D Portfolio",
-    "Blender",
-    "Three.js",
-    "React",
-    "Next.js",
-    "Web Development",
-    "3D Modeling",
+    "Interactive Portfolio",
+    "Three.js Developer",
+    "React Developer",
+    "Next.js Developer",
+    "Blender 3D",
+    "Web Developer",
+    "Frontend Developer",
+    "WebGL",
+    "React Three Fiber",
+    "Immersive Web",
+    "Full Stack Developer",
+    "JavaScript Developer",
+    "3D Web Experience",
+    "Immersive Website",
+    "Creative Coding",
+    "3D Web Creator",
   ],
-  authors: [{ name: "Erfan Mirasadi" }],
+  authors: [{ name: "Erfan Mirasadi", url: "https://iamerfan.me" }],
   creator: "Erfan Mirasadi",
   publisher: "Erfan Mirasadi",
-  robots: "index, follow",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: "https://iamerfan.me",
+  },
   openGraph: {
-    title: "IamErfan",
+    title: "Step Inside a 3D World — Erfan's Portfolio",
     description:
-      "An immersive 3D portfolio experience built with Blender and modern web technologies",
+      "An award-winning 3D experience. Walk through a fully interactive 3D house built with Three.js, React & Blender. Explore projects, skills, and stories in an immersive WebGL experience — by Erfan Mirasadi.",
     type: "website",
+    url: "https://iamerfan.me",
     locale: "en_US",
-    siteName: "IamErfan",
+    siteName: "Erfan Mirasadi — Portfolio",
     images: [
       {
         url: "/images/IMG_6140.png",
         width: 1200,
         height: 630,
-        alt: "IamErfan",
+        alt: "Erfan Mirasadi — Interactive 3D Portfolio Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "IamErfan",
+    title: "Step Inside a 3D World — Erfan's Portfolio",
     description:
-      "An immersive 3D portfolio experience built with Blender and modern web technologies",
+      "Not your typical portfolio. Walk through a 3D house, interact with everything — built with Three.js & Blender by Erfan Mirasadi.",
     images: ["/images/IMG_6140.png"],
   },
   icons: {
@@ -51,6 +84,7 @@ export const metadata = {
     ],
   },
   manifest: "/site.webmanifest",
+  category: "technology",
 };
 
 export const viewport = {
@@ -61,12 +95,56 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Erfan Mirasadi",
+    url: "https://iamerfan.me",
+    image: "https://iamerfan.me/images/IMG_6140.png",
+    jobTitle: "Creative Developer",
+    description:
+      "Creative Front-end developer specializing in immersive 3D web experiences and modern frontend development.",
+    knowsAbout: [
+      "Three.js",
+      "React",
+      "Next.js",
+      "Blender",
+      "WebGL",
+      "JavaScript",
+      "3D Web Development",
+      "Frontend Development",
+    ],
+    // Add your social links here for better SEO authority
+    sameAs: [
+      "https://github.com/YOUR_GITHUB_USERNAME",
+      "https://linkedin.com/in/YOUR_LINKEDIN_USERNAME",
+    ],
+  };
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Erfan Mirasadi — Portfolio",
+    url: "https://iamerfan.me",
+    description:
+      "Interactive 3D portfolio of Erfan Mirasadi — a creative developer building immersive web experiences.",
+    author: {
+      "@type": "Person",
+      name: "Erfan Mirasadi",
+    },
+  };
+
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/images/IMG_6140.png" />
-        <link rel="apple-touch-icon" href="/images/IMG_6140.png" />
-        <meta name="theme-color" content="#000000" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
       </head>
       <body>{children}</body>
     </html>
