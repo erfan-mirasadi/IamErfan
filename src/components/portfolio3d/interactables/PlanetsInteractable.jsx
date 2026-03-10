@@ -3,6 +3,13 @@
 import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
+const handlePointerEnter = () => {
+  document.body.style.cursor = "pointer";
+};
+const handlePointerLeave = () => {
+  document.body.style.cursor = "";
+};
+
 const defaultScript = [
   {
     type: "normal",
@@ -32,12 +39,8 @@ export default function PlanetsInteractable({
           scriptData,
         });
       }}
-      onPointerEnter={() => {
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerLeave={() => {
-        document.body.style.cursor = "";
-      }}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       markerPosition={{ x: -0.25, y: -0.2, z: 1.8 }}
       markerSize={0.03}
       segments={42}

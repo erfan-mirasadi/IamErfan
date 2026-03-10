@@ -3,6 +3,13 @@
 import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
+const handlePointerEnter = () => {
+  document.body.style.cursor = "pointer";
+};
+const handlePointerLeave = () => {
+  document.body.style.cursor = "";
+};
+
 const projectScripts = {
   Project_1: {
     targetName: "Project_1",
@@ -98,12 +105,8 @@ export default function ProjectInteractable({
       activeStep={activeStep}
       isActive={shouldBeActive}
       onClick={() => openModal({ scriptData: scriptData.modalData })}
-      onPointerEnter={() => {
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerLeave={() => {
-        document.body.style.cursor = "";
-      }}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       markerPosition={scriptData.markerPosition}
       markerSize={0.04}
     />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useMemo } from "react";
+import { Suspense, useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
@@ -55,7 +55,7 @@ const sheet = project.sheet("Scene");
 function AnimatedScene({ onActiveStepUpdate }) {
   const sheet = useCurrentSheet();
   const scroll = useScroll();
-  let currentActiveStep = "intro";
+  const currentActiveStepRef = useRef("intro");
 
   useFrame(() => {
     if (!sheet) return;
@@ -72,9 +72,9 @@ function AnimatedScene({ onActiveStepUpdate }) {
       }
     }
 
-    if (newActiveStep !== currentActiveStep && onActiveStepUpdate) {
+    if (newActiveStep !== currentActiveStepRef.current && onActiveStepUpdate) {
       onActiveStepUpdate(newActiveStep);
-      currentActiveStep = newActiveStep;
+      currentActiveStepRef.current = newActiveStep;
     }
   });
 

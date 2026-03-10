@@ -3,6 +3,13 @@
 import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
+const handlePointerEnter = () => {
+  document.body.style.cursor = "pointer";
+};
+const handlePointerLeave = () => {
+  document.body.style.cursor = "";
+};
+
 const defaultScript = [
   {
     type: "normal",
@@ -36,12 +43,8 @@ export default function SetarInteractable({
           scriptData,
         });
       }}
-      onPointerEnter={() => {
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerLeave={() => {
-        document.body.style.cursor = "";
-      }}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       markerPosition={{ x: -1.5, y: 0, z: 0.8 }}
       markerSize={0.25}
     />

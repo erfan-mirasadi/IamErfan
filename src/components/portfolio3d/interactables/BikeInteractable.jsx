@@ -3,6 +3,13 @@
 import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
+const handlePointerEnter = () => {
+  document.body.style.cursor = "pointer";
+};
+const handlePointerLeave = () => {
+  document.body.style.cursor = "";
+};
+
 const defaultScript = [
   {
     type: "error",
@@ -36,12 +43,8 @@ export default function BikeInteractable({
           scriptData,
         });
       }}
-      onPointerEnter={() => {
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerLeave={() => {
-        document.body.style.cursor = "";
-      }}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       markerPosition={{ x: 15, y: 59, z: -95 }}
       markerSize={2}
       segments={35}

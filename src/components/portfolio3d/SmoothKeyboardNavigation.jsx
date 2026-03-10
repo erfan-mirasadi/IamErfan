@@ -8,12 +8,13 @@ export default function SmoothKeyboardNavigation() {
   const velocityRef = useRef(0);
   const animationRef = useRef(null);
   const keysPressed = useRef(new Set());
+  const startLoopRef = useRef(null);
 
   useEffect(() => {
     const animate = () => {
       // Apply continuous acceleration while keys are pressed
       if (keysPressed.current.size > 0) {
-        const acceleration = scroll.el.scrollHeight * 0.00015; // Continuous smooth acceleration
+        const acceleration = scroll.el.scrollHeight * 0.00015;
 
         if (keysPressed.current.has("ArrowUp")) {
           velocityRef.current = Math.min(velocityRef.current + acceleration, 8);
@@ -21,41 +22,55 @@ export default function SmoothKeyboardNavigation() {
         if (keysPressed.current.has("ArrowDown")) {
           velocityRef.current = Math.max(
             velocityRef.current - acceleration,
-            -8
+            -8,
           );
         }
       }
 
       if (velocityRef.current !== 0) {
-        // Apply velocity to scroll position
         const currentScroll = scroll.el.scrollTop;
         const maxScroll = scroll.el.scrollHeight - scroll.el.clientHeight;
         const newScroll = Math.max(
           0,
-          Math.min(maxScroll, currentScroll + velocityRef.current)
+          Math.min(maxScroll, currentScroll + velocityRef.current),
         );
 
         scroll.el.scrollTop = newScroll;
 
-        // Apply damping to velocity only when no keys are pressed
         if (keysPressed.current.size === 0) {
-          velocityRef.current *= 0.92; // Slightly less damping for more momentum
+          velocityRef.current *= 0.92;
         }
 
-        // Stop when velocity is very small
         if (Math.abs(velocityRef.current) < 0.2) {
           velocityRef.current = 0;
         }
       }
 
-      animationRef.current = requestAnimationFrame(animate);
+      // Only keep looping if there's still work to do
+      if (
+        keysPressed.current.size > 0 ||
+        Math.abs(velocityRef.current) >= 0.2
+      ) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        animationRef.current = null;
+      }
     };
 
-    animationRef.current = requestAnimationFrame(animate);
+    // Helper to start the loop if not already running
+    const startLoop = () => {
+      if (!animationRef.current) {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    // Expose startLoop so keydown handler can kick it off
+    startLoopRef.current = startLoop;
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
   }, [scroll]);
@@ -83,11 +98,14 @@ export default function SmoothKeyboardNavigation() {
         }
 
         keysPressed.current.add(event.key);
+
+        // Start the animation loop if not already running
+        if (startLoopRef.current) startLoopRef.current();
       } catch (error) {
         // Silently handle any extension-related errors
         console.warn(
           "Keyboard event handling interrupted by extension:",
-          error
+          error,
         );
       }
     };
@@ -107,7 +125,7 @@ export default function SmoothKeyboardNavigation() {
         // Silently handle any extension-related errors
         console.warn(
           "Keyboard event handling interrupted by extension:",
-          error
+          error,
         );
       }
     };

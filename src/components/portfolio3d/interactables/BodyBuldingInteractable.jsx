@@ -3,6 +3,13 @@
 import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
+const handlePointerEnter = () => {
+  document.body.style.cursor = "pointer";
+};
+const handlePointerLeave = () => {
+  document.body.style.cursor = "";
+};
+
 const defaultScript = [
   { type: "normal", text: "[weights waiting...]\n" },
   { type: "normal", text: "This is where I debug my body.\n" },
@@ -31,12 +38,8 @@ export default function BodyBuldingInteractable({
           scriptData,
         });
       }}
-      onPointerEnter={() => {
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerLeave={() => {
-        document.body.style.cursor = "";
-      }}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       markerPosition={{ x: 0.2, y: 0.5, z: -0.5 }}
       markerSize={0.08}
     />

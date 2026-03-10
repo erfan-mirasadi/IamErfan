@@ -3,6 +3,13 @@
 import { openModal } from "../ModalManager";
 import RaycastClickable from "./RaycastClickable";
 
+const handlePointerEnter = () => {
+  document.body.style.cursor = "pointer";
+};
+const handlePointerLeave = () => {
+  document.body.style.cursor = "";
+};
+
 const defaultScript = [
   { type: "normal", text: "hey traveler\n" },
   { type: "error", wrong: "my nam", correct: "It's Erfan" },
@@ -30,12 +37,8 @@ export default function DoorLockInteractable({
           scriptData,
         });
       }}
-      onPointerEnter={() => {
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerLeave={() => {
-        document.body.style.cursor = "";
-      }}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       markerPosition={{ x: 0.01, y: 0.24, z: 0.029 }} // simple position close to scene
       markerSize={0.02}
       segments={32}
