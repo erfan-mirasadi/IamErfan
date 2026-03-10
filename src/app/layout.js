@@ -116,8 +116,8 @@ export default function RootLayout({ children }) {
     ],
     // Add your social links here for better SEO authority
     sameAs: [
-      "https://github.com/YOUR_GITHUB_USERNAME",
-      "https://linkedin.com/in/YOUR_LINKEDIN_USERNAME",
+      "https://github.com/erfan-mirasadi",
+      "https://www.linkedin.com/in/erfan-mirasadi",
     ],
   };
 
