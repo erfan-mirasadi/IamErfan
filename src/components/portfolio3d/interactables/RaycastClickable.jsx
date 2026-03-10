@@ -69,7 +69,9 @@ export default function RaycastClickable({
         targetObjectRef.current,
         true
       );
-      if (hits.length > 0) return hits[0];
+      // return hit if found, otherwise return null. 
+      // Do not fall back to scene-wide search if target is already cached!
+      return hits.length > 0 ? hits[0] : null;
     }
 
     // search scene if not cached
@@ -107,7 +109,7 @@ export default function RaycastClickable({
       capture: true,
     });
 
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown, { capture: true });
   }, [shouldBeActive, isInsideCanvas, updateMouseRay, findHit, onClick]);
 
   // hover handler
@@ -168,7 +170,7 @@ export default function RaycastClickable({
 
     return () => {
       if (onPointerEnter || onPointerLeave) {
-        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointermove", handlePointerMove, { capture: true });
       }
       if (rafId) cancelAnimationFrame(rafId);
       document.body.style.cursor = "";
@@ -184,9 +186,12 @@ export default function RaycastClickable({
 
   // marker positioning with caching
   useEffect(() => {
+    let currentTarget = null;
+    let group = ringGroupRef.current;
+
     if (!shouldBeActive || !targetName) {
-      if (ringGroupRef.current) {
-        ringGroupRef.current.visible = false;
+      if (group) {
+        group.visible = false;
       }
       targetObjectRef.current = null;
       return;
@@ -201,24 +206,31 @@ export default function RaycastClickable({
       targetObjectRef.current = targetObject;
     }
 
-    if (targetObject && ringGroupRef.current && markerPosition) {
-      targetObject.add(ringGroupRef.current);
-      ringGroupRef.current.position.set(
+    if (targetObject && group && markerPosition) {
+      targetObject.add(group);
+      currentTarget = targetObject;
+      group.position.set(
         markerPosition.x,
         markerPosition.y,
         markerPosition.z
       );
-      ringGroupRef.current.scale.setScalar(markerSize);
-      ringGroupRef.current.visible = true;
+      group.scale.setScalar(markerSize);
+      group.visible = true;
     } else {
       // console.warn(
       //   `Target object "${targetName}" not found or invalid markerPosition`
       // );
-      if (ringGroupRef.current) {
-        ringGroupRef.current.visible = false;
+      if (group) {
+        group.visible = false;
       }
       targetObjectRef.current = null;
     }
+
+    return () => {
+      if (currentTarget && group) {
+        currentTarget.remove(group);
+      }
+    };
   }, [shouldBeActive, scene, targetName, markerPosition, markerSize]);
 
   useEffect(() => {

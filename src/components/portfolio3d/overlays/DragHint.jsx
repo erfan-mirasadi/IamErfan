@@ -20,9 +20,10 @@ export default function DragHint({ activeStep }) {
     if (!leftGarden) return;
 
     hasShownRef.current = true;
+    setVisible(true);
 
     // Hide the hint entirely after 6 seconds (allows the animation to play a few times)
-    timersRef.current.push(setTimeout(() => setVisible(false), 6000));
+    timersRef.current.push(setTimeout(() => setVisible(false), 3000));
   }, [activeStep]);
 
   // Cleanup all active timers when the component unmounts
