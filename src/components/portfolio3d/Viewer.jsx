@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useMemo, useRef } from "react";
+import { Suspense, use, useCallback, useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
@@ -9,13 +9,11 @@ import {
   useScroll,
   AdaptiveDpr,
   AdaptiveEvents,
-  useProgress,
 } from "@react-three/drei";
 import * as THREE from "three";
 import { setConsoleFunction } from "three";
 import HouseScene from "./scene/HouseScene";
 import { getProject, val } from "@theatre/core";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import {
   SheetProvider,
   PerspectiveCamera,
@@ -32,9 +30,20 @@ import DirtyWindowOverlay from "./overlays/DirtyWindowOverlay";
 import SmoothKeyboardNavigation from "./SmoothKeyboardNavigation";
 import CameraDragOrbit from "./CameraDragOrbit";
 import DragHint from "./overlays/DragHint";
+import SceneWarmup from "./loading/SceneWarmup";
+import SceneErrorBoundary from "./loading/SceneErrorBoundary";
+import {
+  loadEnvironmentMap,
+  preloadSceneAssets,
+} from "./loading/sceneLoader";
 
 // Uses the official Three.js setConsoleFunction API.
-const suppressedWarnings = ["Clock", "PCFSoftShadowMap"];
+const suppressedWarnings = [
+  "Clock",
+  "PCFSoftShadowMap",
+  // the loading warm-up just falls back to normal compiling without this extension
+  "KHR_parallel_shader_compile",
+];
 setConsoleFunction((type, message, ...params) => {
   if (
     type === "warn" &&
@@ -44,9 +53,10 @@ setConsoleFunction((type, message, ...params) => {
     return;
   console[type](message, ...params);
 });
-// Initialize DRACO loader
-const draco = new DRACOLoader();
-draco.setDecoderPath("/draco/");
+
+// Start downloading the model, Draco decoder and environment map as soon as
+// this module runs in the browser (before React even renders the Canvas)
+preloadSceneAssets();
 
 // Initialize Theatre.js project and sheet
 const project = getProject("Portfolio", { state: animationState });
@@ -56,6 +66,8 @@ function AnimatedScene({ onActiveStepUpdate }) {
   const sheet = useCurrentSheet();
   const scroll = useScroll();
   const currentActiveStepRef = useRef("intro");
+  // self-hosted "sunset" HDR (null if it failed, the scene still works without it)
+  const envMap = use(loadEnvironmentMap());
 
   useFrame(() => {
     if (!sheet) return;
@@ -81,18 +93,18 @@ function AnimatedScene({ onActiveStepUpdate }) {
   return (
     <>
       <PerspectiveCamera theatreKey="Camera" makeDefault />
-      <Environment preset="sunset" background />
+      {envMap && <Environment map={envMap} background />}
     </>
   );
 }
 
-export default function PortfolioViewer() {
+export default function PortfolioViewer({ assetBytes }) {
   const [activeStep, setActiveStep] = useState("intro");
+  // sceneWarm: shaders compiled + textures uploaded -> start the render loop
+  // sceneReady: first frames are drawn behind the loader -> loader can leave
+  const [sceneWarm, setSceneWarm] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
-  const { active } = useProgress();
-
-  const isLoaded = !active;
-  const isFullyReady = isLoaded && sceneReady;
+  const [loadError, setLoadError] = useState(null);
 
   const canvasProps = useMemo(
     () => ({
@@ -107,25 +119,28 @@ export default function PortfolioViewer() {
     [],
   );
 
-  const handleSceneReady = () => setSceneReady(true);
+  const handleSceneWarm = useCallback(() => setSceneWarm(true), []);
+  const handleSceneReady = useCallback(() => setSceneReady(true), []);
 
   return (
     <>
-      <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
-      <Loader />
+      {/* stays on top until the house is really on screen (no black gaps) */}
+      <Loader ready={sceneReady} error={loadError} assetBytes={assetBytes} />
 
-      {isLoaded && (
-        <div
-          style={{
-            opacity: isFullyReady ? 1 : 0,
-            animation: isFullyReady ? "fadeIn 2s ease-out" : "none",
-            width: "100%",
-            height: "100vh",
-            position: "relative",
-            transition: "opacity 0.3s ease-out",
-          }}
-        >
-          <Canvas {...canvasProps}>
+      {/* The Canvas is mounted once and never unmounted while assets load */}
+      <div
+        style={{
+          width: "100%",
+          height: "100vh",
+          position: "relative",
+        }}
+      >
+        <SceneErrorBoundary onError={setLoadError}>
+          <Canvas
+            {...canvasProps}
+            // nothing is drawn while loading, rendering starts after the warm-up
+            frameloop={sceneWarm ? "always" : "never"}
+          >
             {/* <ContextLostHandler onContextLost={() => setSceneReady(false)} /> */}
             <AdaptiveDpr pixelated />
             <AdaptiveEvents />
@@ -135,60 +150,59 @@ export default function PortfolioViewer() {
             >
               <SheetProvider sheet={sheet}>
                 <Suspense fallback={null}>
-                  <HouseScene
-                    activeStep={activeStep}
-                    onReady={handleSceneReady}
-                  />
+                  <HouseScene activeStep={activeStep} />
                   <AnimatedScene onActiveStepUpdate={setActiveStep} />
                   <SmoothKeyboardNavigation />
                   <CameraDragOrbit />
+                  <SceneWarmup
+                    onWarm={handleSceneWarm}
+                    onReady={handleSceneReady}
+                  />
                 </Suspense>
               </SheetProvider>
             </ScrollControls>
           </Canvas>
+        </SceneErrorBoundary>
 
-          {/* Dirty Window Overlay */}
-          <Image
-            src="/images/dirty-window-6.jpg"
-            alt="dirty-window-6"
-            fill
-            priority
-            style={{
-              objectFit: "cover",
-              objectPosition: "center",
-              pointerEvents: "none",
-              mixBlendMode: "multiply",
-              opacity: 0.05,
-              zIndex: 0,
-              transform: "scale(1.1)",
-            }}
-            sizes="100vw"
-          />
-          <Image
-            src="/images/dirty-window-3.jpg"
-            alt="dirty-window-3"
-            fill
-            priority
-            style={{
-              objectFit: "cover",
-              objectPosition: "center",
-              pointerEvents: "none",
-              mixBlendMode: "screen",
-              opacity: 0.15,
-              zIndex: 0,
-            }}
-            sizes="100vw"
-          />
+        {/* Dirty Window Overlay */}
+        <Image
+          src="/images/dirty-window-6.jpg"
+          alt="dirty-window-6"
+          fill
+          style={{
+            objectFit: "cover",
+            objectPosition: "center",
+            pointerEvents: "none",
+            mixBlendMode: "multiply",
+            opacity: 0.05,
+            zIndex: 0,
+            transform: "scale(1.1)",
+          }}
+          sizes="100vw"
+        />
+        <Image
+          src="/images/dirty-window-3.jpg"
+          alt="dirty-window-3"
+          fill
+          style={{
+            objectFit: "cover",
+            objectPosition: "center",
+            pointerEvents: "none",
+            mixBlendMode: "screen",
+            opacity: 0.15,
+            zIndex: 0,
+          }}
+          sizes="100vw"
+        />
 
-          {/* UI Overlays */}
-          <DirtyWindowOverlay activeStep={activeStep} />
-          <IntroScrollWrapper activeStep={activeStep} />
-          <RoadmapSidebar activeStep={activeStep} />
-          <Hint activeStep={activeStep} />
-          <DragHint activeStep={activeStep} />
-          <ContactMe activeStep={activeStep} />
-        </div>
-      )}
+        {/* UI Overlays */}
+        <DirtyWindowOverlay activeStep={activeStep} />
+        <IntroScrollWrapper activeStep={activeStep} />
+        <RoadmapSidebar activeStep={activeStep} />
+        <Hint activeStep={activeStep} />
+        <DragHint activeStep={activeStep} />
+        <ContactMe activeStep={activeStep} />
+      </div>
     </>
   );
 }

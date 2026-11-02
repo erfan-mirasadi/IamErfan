@@ -50,6 +50,12 @@ run(
     `--weld`
 );
 
+// Re-encode the heavy PNG textures (WebP / JPEG) so the GLB downloads ~3x faster.
+// Geometry stays untouched, see scripts/compress-textures.mjs for details.
+const compressScript = resolve(root, "scripts/compress-textures.mjs");
+run(`node "${compressScript}" "${outDraco}"`);
+run(`node "${compressScript}" "${outDracoQ}"`);
+
 console.log("\n✅ Draco builds ready:");
 console.log(" -", outDraco);
 console.log(" -", outDracoQ);
@@ -73,4 +79,6 @@ console.log(" -", outDracoQ);
 // #
 // # Notes:
 // # - Draco decoders are served from /public/draco automatically.
+// # - Textures are re-encoded to WebP/JPEG after the Draco step
+// #   (yarn model:textures runs only that step on main-draco.glb).
 // # - Re-run this script whenever you update main.glb.

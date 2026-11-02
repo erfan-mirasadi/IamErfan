@@ -1,13 +1,11 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
-import { useLayoutEffect, useRef } from "react";
+import { use, useLayoutEffect, useRef } from "react";
+import { loadHouseModel } from "../../loading/sceneLoader";
 
-// preload the 3D model
-useGLTF.preload("/models/main-draco.glb", "/draco/");
-
+// the model is preloaded (with download progress) in loading/sceneLoader.js
 export default function HouseModel({ onLoad, ...props }) {
-  const { scene } = useGLTF("/models/main-draco.glb", "/draco/");
+  const { scene } = use(loadHouseModel());
   const loadedRef = useRef(false);
 
   useLayoutEffect(() => {

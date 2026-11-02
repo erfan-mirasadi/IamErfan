@@ -42,10 +42,9 @@ export default function DirtyWindowOverlay({ activeStep }) {
       }}
     >
       <Image
-        src="/images/dirty-window-7.png"
+        src="/images/dirty-window-7.jpg"
         alt=""
         fill
-        priority
         style={{
           objectFit: "cover",
           objectPosition: "center",

@@ -1,3 +1,4 @@
+import { preload } from "react-dom";
 import "./globals.css";
 
 export const metadata = {
@@ -95,6 +96,13 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }) {
+  // Self-hosted VT323 (latin) is what the loading screen uses, fetch it right away
+  preload("/fonts/vt323-latin.woff2", {
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
+  });
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",

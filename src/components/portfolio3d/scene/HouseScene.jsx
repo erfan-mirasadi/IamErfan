@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, use, useState } from "react";
 import { Center, PerformanceMonitor } from "@react-three/drei";
 import {
   EffectComposer,
@@ -17,19 +17,13 @@ import BodyBuldingInteractable from "../interactables/BodyBuldingInteractable";
 import BikeInteractable from "../interactables/BikeInteractable";
 import SetarInteractable from "../interactables/SetarInteractable";
 import ProjectInteractable from "../interactables/ProjectInteractable";
+import { loadHouseModel } from "../loading/sceneLoader";
 
-export default function HouseScene({ activeStep = "intro", onReady }) {
+export default function HouseScene({ activeStep = "intro" }) {
+  // Wait for the model BEFORE mounting <Center>: it measures its bounds only once,
+  // and the Theatre camera keyframes were made with the house inside those bounds.
+  use(loadHouseModel());
   const [extraLightsOn, setExtraLightsOn] = useState(true);
-  const [modelLoaded, setModelLoaded] = useState(false);
-
-  // trigger ready when model is loaded
-  const handleModelLoad = () => {
-    setModelLoaded(true);
-    if (onReady) {
-      // small delay to ensure everything is rendered
-      setTimeout(() => onReady(), 100);
-    }
-  };
 
   return (
     <Center>
@@ -92,7 +86,7 @@ export default function HouseScene({ activeStep = "intro", onReady }) {
 
       {/* main scene content */}
       <Suspense fallback={null}>
-        <HouseModel onLoad={handleModelLoad} />
+        <HouseModel />
         <DoorLockInteractable activeStep={activeStep} />
         <PlanetsInteractable activeStep={activeStep} />
         <BookInteractable activeStep={activeStep} />
