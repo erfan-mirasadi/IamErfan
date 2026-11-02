@@ -29,6 +29,7 @@ import ContactMe from "./overlays/ContactMe";
 import DirtyWindowOverlay from "./overlays/DirtyWindowOverlay";
 import SmoothKeyboardNavigation from "./SmoothKeyboardNavigation";
 import CameraDragOrbit from "./CameraDragOrbit";
+import CustomCursor from "./CustomCursor";
 import SceneWarmup from "./loading/SceneWarmup";
 import SceneErrorBoundary from "./loading/SceneErrorBoundary";
 import {
@@ -128,6 +129,8 @@ export default function PortfolioViewer({ assetBytes }) {
 
   return (
     <>
+      <CustomCursor />
+
       {/* stays on top until the house is really on screen (no black gaps) */}
       <Loader ready={sceneReady} error={loadError} assetBytes={assetBytes} />
 
