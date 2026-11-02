@@ -1,119 +1,137 @@
-import { useState, useEffect } from "react";
+"use client";
 
-// hint message text
-const HINT_TEXT = " ⊙ See something glowing? Yep, click it! ";
-const TYPING_SPEED = 60; // in milliseconds
+import { useEffect, useState } from "react";
+
+// One-time tip about the glowing markers. It shows up where the old green hint used
+// to open (2s after reaching these steps), closes itself after 10s or on click,
+// and never comes back on this browser.
+const SHOW_AT_STEPS = ["Key", "Workshop"];
+const SHOW_DELAY = 2000; // ms after arriving at the step
+const VISIBLE_SECONDS = 10;
+const SEEN_KEY = "iamerfan:glow-tip-seen";
+
+const LINES = ["> see something glowing?", "> yep. click it."];
+
+let seenThisVisit = false; // backup when storage is blocked (private mode etc.)
+
+function alreadySeen() {
+  if (seenThisVisit) return true;
+  try {
+    return window.localStorage.getItem(SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markSeen() {
+  seenThisVisit = true;
+  try {
+    window.localStorage.setItem(SEEN_KEY, "1");
+  } catch {
+    // nothing to do, seenThisVisit still keeps it to once
+  }
+}
+
+// mini version of the glowing markers in the scene
+function MarkerGlyph() {
+  return (
+    <svg className="glow-tip-marker" viewBox="0 0 48 48" aria-hidden>
+      <circle className="glow-tip-ring-outer" cx="24" cy="24" r="19" />
+      <circle className="glow-tip-ring-inner" cx="24" cy="24" r="11" />
+      <circle className="glow-tip-core" cx="24" cy="24" r="3" />
+    </svg>
+  );
+}
 
 export default function Hint({ activeStep = "intro" }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [displayedText, setDisplayedText] = useState("");
-  const [autoOpenCount, setAutoOpenCount] = useState(0); // count auto opens
+  // hidden -> open -> closing -> gone
+  const [phase, setPhase] = useState("hidden");
 
-  // check if component should be active
-  const isActive = ["Key", "Workshop"].includes(activeStep);
-
-  // auto open/close effect for first visit (only 2 times)
+  // wait a moment on a step with glowing markers, then show it once
   useEffect(() => {
-    if (!isActive || autoOpenCount >= 2) return; // skip if not active or already opened twice
+    if (phase !== "hidden" || !SHOW_AT_STEPS.includes(activeStep)) return;
+    const timer = setTimeout(() => {
+      if (alreadySeen()) return;
+      // a terminal is already open: try again on the next step
+      if (document.body.classList.contains("modal-open")) return;
+      markSeen();
+      setPhase("open");
+    }, SHOW_DELAY);
+    return () => clearTimeout(timer);
+  }, [activeStep, phase]);
 
-    const openTimer = setTimeout(() => {
-      setIsOpen(true);
-      setAutoOpenCount((prev) => prev + 1);
-    }, 2000); // wait 2 sec
-
-    const closeTimer = setTimeout(() => {
-      setIsOpen(false);
-    }, 7000);
-
-    return () => {
-      clearTimeout(openTimer);
-      clearTimeout(closeTimer);
+  // close after 10s, with Escape, or when a marker was clicked (terminal opened)
+  useEffect(() => {
+    if (phase !== "open") return;
+    const close = () => setPhase("closing");
+    const timer = setTimeout(close, VISIBLE_SECONDS * 1000);
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") close();
     };
-  }, [isActive, autoOpenCount]);
+    const observer = new MutationObserver(() => {
+      if (document.body.classList.contains("modal-open")) close();
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [phase]);
 
-  // auto close after user clicks
+  // let the CRT switch-off animation play, then unmount
   useEffect(() => {
-    if (!isActive || !isOpen) return; // dont do anything if not active or closed
+    if (phase !== "closing") return;
+    const timer = setTimeout(() => setPhase("gone"), 420);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
-    const autoCloseTimer = setTimeout(() => {
-      setIsOpen(false);
-    }, 5000); // close after 5 seconds
-
-    return () => clearTimeout(autoCloseTimer);
-  }, [isOpen, isActive]);
-
-  // close when activeStep changes
-  useEffect(() => {
-    setIsOpen(false);
-  }, [activeStep]);
-
-  // typing animation effect
-  useEffect(() => {
-    // if closed, clear text immediately
-    if (!isOpen) {
-      setDisplayedText("");
-      return;
-    }
-
-    // if open, start typing
-    // prevent re-typing if text is already complete
-    if (displayedText.length === HINT_TEXT.length) {
-      return;
-    }
-
-    const typingInterval = setInterval(() => {
-      setDisplayedText((prev) => {
-        if (prev.length < HINT_TEXT.length) {
-          return HINT_TEXT.slice(0, prev.length + 1);
-        } else {
-          clearInterval(typingInterval);
-          return prev;
-        }
-      });
-    }, TYPING_SPEED);
-
-    // Cleanup function
-    return () => clearInterval(typingInterval);
-  }, [isOpen]);
+  if (phase === "hidden" || phase === "gone") return null;
 
   return (
-    <>
-      {isActive && (
-        <div className="fixed bottom-10 left-4 md:left-10 font-vt323 text-xl scale-75 md:scale-100">
-          <div className="relative flex items-center h-12">
-            {/* main button with glow effect */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className={`
-                w-12 h-12 rounded-full bg-black flex items-center justify-center 
-                text-green-400 text-3xl z-10
-                border-2 border-green-400/80
-                transition-all duration-300
-                hover:bg-green-400 hover:text-black hover:shadow-none
-                animate-[pulseGlow_4s_ease-in-out_infinite] cursor-pointer
-              `}
-              style={{ boxShadow: "0 0 15px 3px rgba(34, 197, 94, 0.5)" }}
-            >
-              ?
-            </button>
+    <div className="glow-tip-anchor">
+      <div
+        className={`glow-tip ${phase === "closing" ? "is-closing" : ""}`}
+        role="status"
+        aria-live="polite"
+        data-cursor="link"
+        onClick={() => setPhase("closing")}
+      >
+        <div className="glow-tip-titlebar">
+          <span className="glow-tip-led" aria-hidden />
+          <span>hint.exe</span>
+          <button type="button" className="glow-tip-close" aria-label="Close hint">
+            ×
+          </button>
+        </div>
 
-            {/* text container that opens like terminal */}
-            <div
-              className={`
-                absolute left-6 h-full flex items-center bg-black 
-                pl-8 pr-4
-                border border-green-400/50
-                overflow-hidden transition-[max-width,opacity] duration-700 ease-in-out
-                ${isOpen ? "max-w-md opacity-100" : "max-w-0 opacity-0"}
-              `}
+        <div className="glow-tip-body">
+          <MarkerGlyph />
+          <div className="glow-tip-text">
+            <p className="glow-tip-line" style={{ "--chars": LINES[0].length }}>
+              {LINES[0]}
+            </p>
+            <p
+              className="glow-tip-line glow-tip-line-2"
+              style={{ "--chars": LINES[1].length + 1 }}
             >
-              <p className="text-green-400 whitespace-nowrap [text-shadow:0_0_5px_theme(colors.green.400)]">
-                {displayedText}
-              </p>
-            </div>
+              {LINES[1]}
+              <span className="loader-caret">_</span>
+            </p>
           </div>
         </div>
-      )}
-    </>
+
+        {/* one block per second, like the loading bar, draining until it closes */}
+        <div className="glow-tip-timer" aria-hidden>
+          <div className="glow-tip-blocks">
+            {Array.from({ length: VISIBLE_SECONDS }, (_, i) => (
+              <span key={i} style={{ animationDelay: `${VISIBLE_SECONDS - i - 0.5}s` }} />
+            ))}
+          </div>
+          <span className="glow-tip-note">click to close</span>
+        </div>
+      </div>
+    </div>
   );
 }

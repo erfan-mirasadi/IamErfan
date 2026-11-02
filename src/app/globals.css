@@ -217,21 +217,269 @@ body.project-overlay-open .project-overlay-container {
   animation: slide-in 0.8s ease-out forwards;
 }
 
-/* hint */
-@keyframes pulseGlow {
-  0%,
-  100% {
-    box-shadow: 0 0 15px 3px rgba(34, 197, 94, 0.5);
-    transform: scale(1);
+/* ---------------------------------------------------------------------------
+ * Hint popup (hint.exe): a little CRT terminal that powers on once, types the
+ * tip, drains a block timer like the loading bar, then powers off
+ * ------------------------------------------------------------------------ */
+.glow-tip-anchor {
+  position: fixed;
+  left: 50%;
+  bottom: max(32px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+  z-index: 60;
+  width: min(92vw, 360px);
+  transform: translateX(-50%);
+}
+
+.glow-tip {
+  position: relative;
+  overflow: hidden;
+  color: #cffafe;
+  font-family: var(--font-vt323);
+  background: rgba(2, 12, 14, 0.84);
+  border: 1px solid rgba(57, 231, 232, 0.55);
+  border-radius: 10px;
+  box-shadow:
+    0 0 26px rgba(57, 231, 232, 0.28),
+    inset 0 0 18px rgba(57, 231, 232, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+  animation: glow-tip-on 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* scanlines */
+.glow-tip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    rgba(57, 231, 232, 0.06) 2px 3px
+  );
+}
+
+.glow-tip.is-closing {
+  animation: glow-tip-off 0.42s ease-in forwards;
+}
+
+.glow-tip-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  color: rgba(207, 250, 254, 0.7);
+  border-bottom: 1px solid rgba(57, 231, 232, 0.22);
+}
+
+.glow-tip-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #39e7e8;
+  box-shadow: 0 0 6px #39e7e8;
+  animation: loader-caret 1s steps(1) infinite;
+}
+
+.glow-tip-close {
+  margin-left: auto;
+  padding: 0 4px;
+  font-size: 20px;
+  line-height: 1;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.glow-tip-close:hover,
+.glow-tip-close:focus-visible {
+  color: #020c0e;
+  background: #a5f3fc;
+  outline: none;
+}
+
+.glow-tip-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px 6px;
+}
+
+.glow-tip-text {
+  min-width: 0;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 6px rgba(57, 231, 232, 0.55);
+}
+
+/* typewriter: monospace font, so the width grows one character per step */
+.glow-tip-line {
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: glow-tip-type 0.8s steps(var(--chars)) 0.55s forwards;
+}
+
+.glow-tip-line-2 {
+  color: #ecfeff;
+  animation-delay: 1.5s;
+}
+
+.glow-tip-marker {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  overflow: visible;
+  filter: drop-shadow(0 0 4px rgba(57, 231, 232, 0.9));
+}
+
+.glow-tip-marker circle {
+  fill: none;
+  stroke: #39e7e8;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.glow-tip-ring-outer {
+  stroke-width: 2.6;
+  stroke-dasharray: 0 7.46; /* 16 dots on r=19 */
+  animation: glow-tip-spin 6s linear infinite;
+}
+
+.glow-tip-ring-inner {
+  stroke-width: 2.2;
+  stroke-dasharray: 0 5.76; /* 12 dots on r=11 */
+  animation: glow-tip-flip 2.4s ease-in-out infinite;
+}
+
+.glow-tip-marker .glow-tip-core {
+  fill: #ecfeff;
+  stroke: none;
+  animation: glow-tip-pulse 1.6s ease-in-out infinite;
+}
+
+.glow-tip-timer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 14px 11px;
+}
+
+.glow-tip-blocks {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid rgba(103, 232, 249, 0.6);
+  border-radius: 3px;
+}
+
+.glow-tip-blocks span {
+  width: 9px;
+  height: 9px;
+  background: #a5f3fc;
+  animation: glow-tip-block-off 0.2s steps(1) forwards;
+}
+
+.glow-tip-note {
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: rgba(207, 250, 254, 0.45);
+}
+
+@keyframes glow-tip-on {
+  0% {
+    opacity: 0;
+    transform: scale(0.5, 0.02);
+    filter: brightness(3);
   }
-  50% {
-    box-shadow: 0 0 25px 8px rgba(34, 197, 94, 0.7);
-    transform: scale(1.05);
+  45% {
+    opacity: 1;
+    transform: scale(1, 0.02);
+    filter: brightness(2.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1, 1);
+    filter: none;
   }
 }
 
-.animate-pulseGlow {
-  animation: pulseGlow 4s ease-in-out infinite;
+@keyframes glow-tip-off {
+  0% {
+    transform: scale(1, 1);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1, 0.02);
+    filter: brightness(2.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0, 0.02);
+  }
+}
+
+@keyframes glow-tip-type {
+  to {
+    /* one character + its letter-spacing per step */
+    width: calc(var(--chars) * (1ch + 0.04em) + 0.1ch);
+  }
+}
+
+@keyframes glow-tip-block-off {
+  to {
+    opacity: 0.12;
+  }
+}
+
+@keyframes glow-tip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* the inner ring turns like the 3D markers do */
+@keyframes glow-tip-flip {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.18);
+  }
+}
+
+@keyframes glow-tip-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-tip,
+  .glow-tip.is-closing {
+    animation-duration: 0.01s;
+  }
+  .glow-tip-line {
+    width: auto;
+    animation: none;
+  }
+  .glow-tip-marker circle {
+    animation: none;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -347,3 +595,4 @@ body.project-overlay-open .project-overlay-container {
     opacity: 0.3;
   }
 }
+
