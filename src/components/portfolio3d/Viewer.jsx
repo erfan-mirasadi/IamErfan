@@ -29,7 +29,6 @@ import ContactMe from "./overlays/ContactMe";
 import DirtyWindowOverlay from "./overlays/DirtyWindowOverlay";
 import SmoothKeyboardNavigation from "./SmoothKeyboardNavigation";
 import CameraDragOrbit from "./CameraDragOrbit";
-import DragHint from "./overlays/DragHint";
 import SceneWarmup from "./loading/SceneWarmup";
 import SceneErrorBoundary from "./loading/SceneErrorBoundary";
 import {
@@ -61,6 +60,11 @@ preloadSceneAssets();
 // Initialize Theatre.js project and sheet
 const project = getProject("Portfolio", { state: animationState });
 const sheet = project.sheet("Scene");
+
+// Scroll feel: the camera glides to the scroll position in ~0.2s instead of jumping
+// with every wheel notch, and never rushes through the house faster than ~3 screens/s
+const SCROLL_DAMPING = 0.2;
+const SCROLL_MAX_SPEED = 0.3;
 
 function AnimatedScene({ onActiveStepUpdate }) {
   const sheet = useCurrentSheet();
@@ -146,7 +150,8 @@ export default function PortfolioViewer({ assetBytes }) {
             <AdaptiveEvents />
             <ScrollControls
               pages={val(sheet.sequence.pointer.length) || 0}
-              damping={0}
+              damping={SCROLL_DAMPING}
+              maxSpeed={SCROLL_MAX_SPEED}
             >
               <SheetProvider sheet={sheet}>
                 <Suspense fallback={null}>
@@ -200,7 +205,6 @@ export default function PortfolioViewer({ assetBytes }) {
         <IntroScrollWrapper activeStep={activeStep} />
         <RoadmapSidebar activeStep={activeStep} />
         <Hint activeStep={activeStep} />
-        <DragHint activeStep={activeStep} />
         <ContactMe activeStep={activeStep} />
       </div>
     </>
