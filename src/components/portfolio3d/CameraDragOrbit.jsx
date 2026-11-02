@@ -111,7 +111,9 @@ export default function CameraDragOrbit() {
     };
   }, [isInsideCanvas, camera]);
 
-  // Runs AFTER Theatre.js updates camera
+  // Runs AFTER Theatre.js updates camera (registered after AnimatedScene's useFrame).
+  // Keep the default priority: any priority > 0 disables R3F's own render call, so when
+  // PerformanceMonitor turns the EffectComposer off nothing drew the scene (frozen frame).
   useFrame(() => {
     const dot = Math.abs(camera.quaternion.dot(lastAppliedQuat.current));
     if (dot < 0.9999) {
@@ -147,7 +149,7 @@ export default function CameraDragOrbit() {
     camera.quaternion.copy(baseQuat.current).multiply(_offsetQuat);
     // Remember for next frame's comparison
     lastAppliedQuat.current.copy(camera.quaternion);
-  }, 1);
+  });
 
   return null;
 }
