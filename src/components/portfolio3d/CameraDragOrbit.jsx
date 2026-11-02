@@ -1,154 +1,169 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 const _offsetQuat = new THREE.Quaternion();
 const _pitchQuat = new THREE.Quaternion();
 const _yawQuat = new THREE.Quaternion();
+const _rollQuat = new THREE.Quaternion();
+const _deltaQuat = new THREE.Quaternion();
 const _xAxis = new THREE.Vector3(1, 0, 0);
 const _yAxis = new THREE.Vector3(0, 1, 0);
+const _zAxis = new THREE.Vector3(0, 0, 1);
 
-const DRAG_THRESHOLD = 4; // Minimum pixels to move before starting to rotate
+// Look around with the cursor (no drag): the view turns toward where the cursor is,
+// same angle per pixel as the old drag, measured from the center of the screen
 const SENSITIVITY = 0.0004; // Mouse movement to radians
-const RETURN_SPEED = 0.07; // How quickly the camera returns to the base position when not dragging
 const MAX_PITCH = Math.PI / 0.5; // Limit vertical rotation to prevent flipping
 const MAX_YAW = Math.PI / 0.5; // Limit horizontal rotation
+const LOOK_SMOOTHING = 0.3; // seconds, how softly the view follows the cursor
+
+// Flight feel while scrolling (kept subtle on purpose)
+const BANK_STRENGTH = 0.035; // roll (rad) per rad/s the camera path turns
+const MAX_BANK = THREE.MathUtils.degToRad(2.5); // never tilt more than this
+const SPEED_FOV = 3; // extra degrees of FOV when the camera flies fast
+const FULL_SPEED = 12; // world units per second that count as "fast"
+const MOTION_SMOOTHING = 0.3; // seconds
+
+const clamp = THREE.MathUtils.clamp;
+// frame-rate independent easing toward a target (snaps when close enough)
+const damp = (current, target, smoothing, delta) => {
+  const next = current + (target - current) * (1 - Math.exp(-delta / smoothing));
+  return Math.abs(next - target) < 1e-5 ? target : next;
+};
 
 export default function CameraDragOrbit() {
   const { camera, gl } = useThree();
 
-  const isDragging = useRef(false);
-  const hasMoved = useRef(false);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const lastX = useRef(0);
-  const lastY = useRef(0);
-  const offsetX = useRef(0);
-  const offsetY = useRef(0);
+  const target = useRef({ yaw: 0, pitch: 0 }); // where the cursor asks to look
+  const look = useRef({ yaw: 0, pitch: 0 }); // smoothed look offset
+  const motion = useRef({ bank: 0, fovKick: 0, tracking: false });
+  const reducedMotion = useRef(false);
 
-  // Theatre.js base quaternion (the "real" keyframe rotation)
+  // Theatre.js base values (the "real" keyframes) and what we wrote last frame
   const baseQuat = useRef(new THREE.Quaternion());
-  // What we set camera.quaternion to last frame
   const lastAppliedQuat = useRef(new THREE.Quaternion());
-
-  const isInsideCanvas = useCallback(
-    (event) => {
-      const rect = gl.domElement.getBoundingClientRect();
-      return (
-        event.clientX >= rect.left &&
-        event.clientX <= rect.right &&
-        event.clientY >= rect.top &&
-        event.clientY <= rect.bottom
-      );
-    },
-    [gl],
-  );
+  const prevBaseQuat = useRef(new THREE.Quaternion());
+  const prevPosition = useRef(new THREE.Vector3());
+  const baseFov = useRef(camera.fov);
+  const lastAppliedFov = useRef(camera.fov);
 
   useEffect(() => {
-    const onPointerDown = (e) => {
-      if (e.button !== 0 || e.pointerType === "touch") return;
-      if (
-        e.target.closest("button, a, input, textarea, select, [role='button']")
-      )
-        return;
-      if (!isInsideCanvas(e)) return;
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    reducedMotion.current = motionQuery.matches;
+    const onMotionPreference = (e) => {
+      reducedMotion.current = e.matches;
+    };
 
-      isDragging.current = true;
-      hasMoved.current = false;
-      startX.current = e.clientX;
-      startY.current = e.clientY;
-      lastX.current = e.clientX;
-      lastY.current = e.clientY;
+    const recenter = () => {
+      target.current.yaw = 0;
+      target.current.pitch = 0;
     };
 
     const onPointerMove = (e) => {
-      if (!isDragging.current || e.pointerType === "touch") return;
+      // touch screens scroll with the finger, there is no hover to follow
+      if (e.pointerType === "touch") return;
+      // keep the view still while a terminal modal is being read
+      if (document.body.classList.contains("modal-open")) return;
 
-      if (!hasMoved.current) {
-        const dx = e.clientX - startX.current;
-        const dy = e.clientY - startY.current;
-        if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD) return;
-        hasMoved.current = true;
-        document.body.style.cursor = "grabbing";
-      }
-
-      const dx = e.clientX - lastX.current;
-      const dy = e.clientY - lastY.current;
-      lastX.current = e.clientX;
-      lastY.current = e.clientY;
-
-      offsetY.current += dx * SENSITIVITY;
-      offsetX.current += dy * SENSITIVITY;
-
-      offsetX.current = Math.max(
-        -MAX_PITCH,
-        Math.min(MAX_PITCH, offsetX.current),
-      );
-      offsetY.current = Math.max(-MAX_YAW, Math.min(MAX_YAW, offsetY.current));
+      const rect = gl.domElement.getBoundingClientRect();
+      const dx = e.clientX - (rect.left + rect.width / 2);
+      const dy = e.clientY - (rect.top + rect.height / 2);
+      target.current.yaw = clamp(dx * SENSITIVITY, -MAX_YAW, MAX_YAW);
+      target.current.pitch = clamp(dy * SENSITIVITY, -MAX_PITCH, MAX_PITCH);
     };
 
-    const onPointerUp = () => {
-      isDragging.current = false;
-      hasMoved.current = false;
-      document.body.style.cursor = "";
+    // cursor left the window -> glide back to the authored view
+    const onPointerOut = (e) => {
+      if (!e.relatedTarget) recenter();
     };
 
-    window.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp, { capture: true });
-    window.addEventListener("pointercancel", onPointerUp, { capture: true });
+    motionQuery.addEventListener("change", onMotionPreference);
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("pointerout", onPointerOut);
+    window.addEventListener("blur", recenter);
 
     return () => {
-      window.removeEventListener("pointerdown", onPointerDown);
+      motionQuery.removeEventListener("change", onMotionPreference);
       window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp, { capture: true });
-      window.removeEventListener("pointercancel", onPointerUp, {
-        capture: true,
-      });
-      document.body.style.cursor = "";
+      window.removeEventListener("pointerout", onPointerOut);
+      window.removeEventListener("blur", recenter);
     };
-  }, [isInsideCanvas, camera]);
+  }, [gl]);
 
   // Runs AFTER Theatre.js updates camera (registered after AnimatedScene's useFrame).
   // Keep the default priority: any priority > 0 disables R3F's own render call, so when
   // PerformanceMonitor turns the EffectComposer off nothing drew the scene (frozen frame).
-  useFrame(() => {
-    const dot = Math.abs(camera.quaternion.dot(lastAppliedQuat.current));
-    if (dot < 0.9999) {
+  useFrame((state, delta) => {
+    const camera = state.camera;
+    const dt = Math.min(delta, 0.1);
+    const calm = reducedMotion.current;
+
+    // Theatre writes the camera on its own tick: anything different from what we wrote
+    // last frame is a new keyframe value. Exact compare, so tiny steps of a smooth
+    // scroll are never mistaken for our own offset and dropped.
+    if (!camera.quaternion.equals(lastAppliedQuat.current)) {
       baseQuat.current.copy(camera.quaternion);
     }
-
-    // Decay offset toward zero when not dragging
-    if (!isDragging.current) {
-      offsetX.current *= 1 - RETURN_SPEED;
-      offsetY.current *= 1 - RETURN_SPEED;
-
-      if (
-        Math.abs(offsetX.current) < 0.0001 &&
-        Math.abs(offsetY.current) < 0.0001
-      ) {
-        offsetX.current = 0;
-        offsetY.current = 0;
-      }
+    if (camera.fov !== lastAppliedFov.current) {
+      baseFov.current = camera.fov;
     }
 
-    // When offset is zero, just track the base and skip
-    if (offsetX.current === 0 && offsetY.current === 0) {
-      baseQuat.current.copy(camera.quaternion);
-      lastAppliedQuat.current.copy(camera.quaternion);
-      return;
-    }
+    // 1) cursor look-around
+    look.current.yaw = damp(
+      look.current.yaw,
+      calm ? 0 : target.current.yaw,
+      LOOK_SMOOTHING,
+      dt,
+    );
+    look.current.pitch = damp(
+      look.current.pitch,
+      calm ? 0 : target.current.pitch,
+      LOOK_SMOOTHING,
+      dt,
+    );
 
-    // Build offset quaternion from accumulated drag
-    _yawQuat.setFromAxisAngle(_yAxis, -offsetY.current);
-    _pitchQuat.setFromAxisAngle(_xAxis, -offsetX.current);
-    _offsetQuat.copy(_yawQuat).multiply(_pitchQuat);
-    // ALWAYS start from the Theatre.js base
+    // 2) flight feel from the scroll path: bank into its turns, widen a bit when fast
+    let aimBank = 0;
+    let aimFovKick = 0;
+    if (motion.current.tracking && !calm && dt > 0) {
+      // rotation since last frame, in the camera's own space -> turn rate around its up axis
+      _deltaQuat.copy(prevBaseQuat.current).invert().multiply(baseQuat.current);
+      const sign = _deltaQuat.w < 0 ? -1 : 1;
+      const turnRate = (2 * sign * _deltaQuat.y) / dt;
+      aimBank = clamp(turnRate * BANK_STRENGTH, -MAX_BANK, MAX_BANK);
+
+      const speed = camera.position.distanceTo(prevPosition.current) / dt;
+      aimFovKick = SPEED_FOV * Math.min(speed / FULL_SPEED, 1);
+    }
+    motion.current.tracking = true;
+    prevBaseQuat.current.copy(baseQuat.current);
+    prevPosition.current.copy(camera.position);
+    motion.current.bank = damp(motion.current.bank, aimBank, MOTION_SMOOTHING, dt);
+    motion.current.fovKick = damp(
+      motion.current.fovKick,
+      aimFovKick,
+      MOTION_SMOOTHING,
+      dt,
+    );
+
+    // 3) ALWAYS start from the Theatre.js base
+    _yawQuat.setFromAxisAngle(_yAxis, -look.current.yaw);
+    _pitchQuat.setFromAxisAngle(_xAxis, -look.current.pitch);
+    _rollQuat.setFromAxisAngle(_zAxis, motion.current.bank);
+    _offsetQuat.copy(_yawQuat).multiply(_pitchQuat).multiply(_rollQuat);
     camera.quaternion.copy(baseQuat.current).multiply(_offsetQuat);
     // Remember for next frame's comparison
     lastAppliedQuat.current.copy(camera.quaternion);
+
+    const fov = baseFov.current + motion.current.fovKick;
+    if (camera.fov !== fov) {
+      camera.fov = fov;
+      camera.updateProjectionMatrix();
+    }
+    lastAppliedFov.current = camera.fov;
   });
 
   return null;
