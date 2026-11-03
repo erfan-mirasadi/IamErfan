@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-// Potted fan palms along the right edge of the front terrace, so the empty side of the
+// Potted fan palms along the sea edges of the front terrace, so the empty side of the
 // intro view gets some life. They are the palm + planter from the kitchen counter:
 // same geometry and materials (nothing new to download or upload), drawn as instanced
 // meshes, so all of them together cost two draw calls.
@@ -9,22 +9,22 @@ const PALM = "LIVISTONA_CHINENSIS_LIVISTONA_CHINENSIS_Mat_0002";
 
 // house model coordinates (same space as the GLB): spot on the terrace floor,
 // planter [width, height] (a bit taller than the kitchen one, like a tree tub),
-// palm size (bigger than the planter = grown into a small tree), turn
+// palm size (bigger than the planter = grown into a small tree), turn.
+// They stand just inside the curb (see createTerraceRail).
 const FLOOR_Y = -1.021;
 const SPOTS = [
   // right edge, from the house corner to the front corner
-  { x: 7.85, z: 12.45, pot: [1.15, 1.6], palm: 1.55, turn: 0.4 },
-  { x: 8.0, z: 13.8, pot: [0.95, 1.25], palm: 1.1, turn: 2.2 },
-  { x: 7.75, z: 15.1, pot: [1.3, 1.9], palm: 2.05, turn: 4.1 },
+  { x: 7.75, z: 12.45, pot: [1.15, 1.6], palm: 1.55, turn: 0.4 },
+  { x: 7.8, z: 13.8, pot: [0.95, 1.25], palm: 1.1, turn: 2.2 },
+  { x: 7.6, z: 14.95, pot: [1.3, 1.9], palm: 2.05, turn: 4.1 },
   // front edge, coming toward the camera (only seen when looking to the right)
-  { x: 6.3, z: 15.15, pot: [1.0, 1.35], palm: 1.2, turn: 1.3 },
-  { x: 4.55, z: 15.05, pot: [1.15, 1.6], palm: 1.5, turn: 5.3 },
-  { x: 2.8, z: 15.15, pot: [0.95, 1.25], palm: 1.05, turn: 3.0 },
-  { x: 1.05, z: 15.1, pot: [1.05, 1.45], palm: 1.3, turn: 0.9 },
+  { x: 6.2, z: 14.9, pot: [1.0, 1.35], palm: 1.2, turn: 1.3 },
+  { x: 4.55, z: 14.8, pot: [1.15, 1.6], palm: 1.5, turn: 5.3 },
+  { x: 2.8, z: 14.8, pot: [0.95, 1.25], palm: 1.05, turn: 3.0 },
+  { x: 1.05, z: 14.82, pot: [1.05, 1.45], palm: 1.3, turn: 0.9 },
 ];
 
 const _matrix = new THREE.Matrix4();
-const _cameraLocal = new THREE.Vector3();
 
 // transform of `object` in the space of `root`, without touching anyone's matrices
 function matrixInRoot(object, root) {
@@ -77,8 +77,6 @@ export function createPierPlants(house) {
 
   const group = new THREE.Group();
   group.name = "PierPlants";
-  // lives outside <Center>, follows the house's world transform (see update)
-  group.matrixAutoUpdate = false;
 
   const meshes = parts.map(({ source }) => {
     const mesh = new THREE.InstancedMesh(source.geometry, source.material, SPOTS.length);
@@ -102,32 +100,21 @@ export function createPierPlants(house) {
   };
   writeOrder(SPOTS.map((_, i) => i));
 
-  const lastHouseMatrix = new THREE.Matrix4();
-  const toHouse = new THREE.Matrix4();
-  const distance = (i) =>
-    (SPOTS[i].x - _cameraLocal.x) ** 2 + (SPOTS[i].z - _cameraLocal.z) ** 2;
-
-  function update(camera) {
-    // the group is a direct child of the scene: copy the house's world matrix
-    if (!lastHouseMatrix.equals(house.matrixWorld)) {
-      lastHouseMatrix.copy(house.matrixWorld);
-      toHouse.copy(house.matrixWorld).invert();
-      group.matrix.copy(house.matrixWorld);
-      group.matrixWorldNeedsUpdate = true;
-    }
-
-    _cameraLocal.setFromMatrixPosition(camera.matrixWorld).applyMatrix4(toHouse);
-    for (let i = 1; i < order.length; i++) {
-      if (distance(order[i - 1]) < distance(order[i])) {
-        writeOrder([...order].sort((a, b) => distance(b) - distance(a)));
-        break;
-      }
-    }
-  }
+  let camera = null;
+  const distance = (i) => (SPOTS[i].x - camera.x) ** 2 + (SPOTS[i].z - camera.z) ** 2;
 
   return {
     object: group,
-    update,
+    // cameraInHouse: camera position in house model coordinates
+    update(cameraInHouse) {
+      camera = cameraInHouse;
+      for (let i = 1; i < order.length; i++) {
+        if (distance(order[i - 1]) < distance(order[i])) {
+          writeOrder([...order].sort((a, b) => distance(b) - distance(a)));
+          break;
+        }
+      }
+    },
     dispose() {
       // geometry and materials belong to the house model, only free the instance data
       meshes.forEach((mesh) => mesh.dispose());
