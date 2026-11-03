@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, use, useState } from "react";
+import { Suspense, use } from "react";
+import { useThree } from "@react-three/fiber";
 import { Center, PerformanceMonitor } from "@react-three/drei";
 import {
   EffectComposer,
@@ -19,17 +20,24 @@ import SetarInteractable from "../interactables/SetarInteractable";
 import ProjectInteractable from "../interactables/ProjectInteractable";
 import { loadHouseModel } from "../loading/sceneLoader";
 
+// When a device can't keep up it renders a little fewer pixels instead. Turning lights
+// or post-processing off (as before) changed the look and made every material compile
+// its shaders again right when the device was already struggling (a long freeze).
+const REDUCED_DPR = 0.75;
+
 export default function HouseScene({ activeStep = "intro" }) {
   // Wait for the model BEFORE mounting <Center>: it measures its bounds only once,
   // and the Theatre camera keyframes were made with the house inside those bounds.
   use(loadHouseModel());
-  const [extraLightsOn, setExtraLightsOn] = useState(true);
+  const setDpr = useThree((state) => state.setDpr);
 
   return (
     <Center>
       <PerformanceMonitor
-        onDecline={() => setExtraLightsOn(false)}
-        onIncline={() => setExtraLightsOn(true)}
+        flipflops={3}
+        onDecline={() => setDpr(REDUCED_DPR)}
+        onIncline={() => setDpr(1)}
+        onFallback={() => setDpr(REDUCED_DPR)}
       />
 
       {/* lighting and static meshes */}
@@ -81,7 +89,6 @@ export default function HouseScene({ activeStep = "intro" }) {
         decay={10}
         position={[-0.2, 1.8, -11.5]}
         castShadow={false}
-        visible={extraLightsOn}
       />
 
       {/* main scene content */}
@@ -98,11 +105,7 @@ export default function HouseScene({ activeStep = "intro" }) {
         <ProjectInteractable targetName="Project_3" activeStep={activeStep} />
         <ProjectInteractable targetName="Project_4" activeStep={activeStep} />
 
-        <EffectComposer
-          multisampling={0}
-          disableNormalPass
-          enabled={extraLightsOn}
-        >
+        <EffectComposer multisampling={0} disableNormalPass>
           <Bloom intensity={0.1} />
           <Noise opacity={0.04} />
           <Vignette eskil={false} offset={0.1} darkness={0.9} />

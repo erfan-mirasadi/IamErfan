@@ -3,6 +3,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import { MODEL_URL, DRACO_DECODER_PATH, ENV_MAP_URL } from "./sceneAssets";
+import { mergeStaticMeshes } from "./mergeStaticMeshes";
+import { KEEP_SEPARATE } from "../scene/model/houseNodes";
 
 // ---------------------------------------------------------------------------
 // Raw loading facts. A plain mutable object on purpose: the Loader reads it once
@@ -57,6 +59,11 @@ export function loadHouseModel() {
     const loader = new GLTFLoader().setDRACOLoader(dracoLoader);
     modelPromise = trackPromise(
       loader.loadAsync(MODEL_URL, trackDownload("model")).then((gltf) => {
+        // ~540 meshes -> one per material (draw calls are the main cost per frame)
+        mergeStaticMeshes(gltf.scene, KEEP_SEPARATE);
+        // the parser keeps every original mesh referenced, let those go
+        gltf.parser?.cache?.removeAll();
+        gltf.parser?.associations?.clear();
         markParsed("model");
         return gltf;
       })

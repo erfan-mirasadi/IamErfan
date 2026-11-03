@@ -105,8 +105,6 @@ export default function Marker({
     };
   }, [ringGeometry, materials]);
 
-  const getGroupRef = () => ringGroupRef;
-
   return (
     <>
       <points ref={outerRingRef} geometry={ringGeometry}>

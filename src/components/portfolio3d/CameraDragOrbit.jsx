@@ -94,8 +94,7 @@ export default function CameraDragOrbit() {
   }, [gl]);
 
   // Runs AFTER Theatre.js updates camera (registered after AnimatedScene's useFrame).
-  // Keep the default priority: any priority > 0 disables R3F's own render call, so when
-  // PerformanceMonitor turns the EffectComposer off nothing drew the scene (frozen frame).
+  // Keep the default priority: any priority > 0 disables R3F's own render call.
   useFrame((state, delta) => {
     const camera = state.camera;
     const dt = Math.min(delta, 0.1);

@@ -8,6 +8,9 @@ import { loadingProgress } from "./sceneLoader";
 const WARMUP_TIMEOUT = 15000; // a slow driver must never keep the loader up forever
 const TEXTURES_PER_FRAME = 4;
 const FRAMES_BEFORE_REVEAL = 3;
+// The only refractive surfaces are fully frosted (roughness 1), so the copy of the
+// scene they blur can be half size: same picture, a quarter of the pixels to draw.
+const TRANSMISSION_SCALE = 0.5;
 
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -78,7 +81,12 @@ export default function SceneWarmup({ onWarm, onReady }) {
       }
       if (cancelled) return;
 
-      // 3) start rendering, useFrame below reveals after a few drawn frames
+      // 3) start rendering, useFrame below reveals after a few drawn frames.
+      //    Nothing that casts a shadow ever moves, so the sun's shadow map is drawn
+      //    once on the first frame instead of every frame (it was ~480 draw calls).
+      gl.shadowMap.autoUpdate = false;
+      gl.shadowMap.needsUpdate = true;
+      gl.transmissionResolutionScale = TRANSMISSION_SCALE;
       loadingProgress.warmup = 1;
       framesRef.current = 0;
       onWarm?.();
@@ -88,6 +96,16 @@ export default function SceneWarmup({ onWarm, onReady }) {
       cancelled = true;
     };
   }, [get, onWarm]);
+
+  // a lost + restored WebGL context comes back with empty shadow maps
+  useEffect(() => {
+    const canvas = get().gl.domElement;
+    const redrawShadows = () => {
+      get().gl.shadowMap.needsUpdate = true;
+    };
+    canvas.addEventListener("webglcontextrestored", redrawShadows);
+    return () => canvas.removeEventListener("webglcontextrestored", redrawShadows);
+  }, [get]);
 
   useFrame(() => {
     if (framesRef.current < 0 || framesRef.current >= FRAMES_BEFORE_REVEAL) return;

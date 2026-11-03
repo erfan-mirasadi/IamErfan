@@ -1,11 +1,10 @@
 import * as THREE from "three";
+import { PALM_LEAVES as PALM, PALM_PLANTER as PLANTER } from "../model/houseNodes";
 
 // Potted fan palms along the sea edges of the front terrace, so the empty side of the
 // intro view gets some life. They are the palm + planter from the kitchen counter:
 // same geometry and materials (nothing new to download or upload), drawn as instanced
 // meshes, so all of them together cost two draw calls.
-const PLANTER = "PLANTER_TERRA_BASE_PLANTER_BOTTOM_CROSS_Mat_0001";
-const PALM = "LIVISTONA_CHINENSIS_LIVISTONA_CHINENSIS_Mat_0002";
 
 // house model coordinates (same space as the GLB): spot on the terrace floor,
 // planter [width, height] (a bit taller than the kitchen one, like a tree tub),

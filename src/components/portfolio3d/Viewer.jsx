@@ -3,23 +3,13 @@
 import { Suspense, use, useCallback, useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import { Canvas, useFrame } from "@react-three/fiber";
-import {
-  Environment,
-  ScrollControls,
-  useScroll,
-  AdaptiveDpr,
-  AdaptiveEvents,
-} from "@react-three/drei";
+import { Environment, ScrollControls, useScroll } from "@react-three/drei";
 import * as THREE from "three";
 import { setConsoleFunction } from "three";
 import HouseScene from "./scene/HouseScene";
 import TerraceLife from "./scene/TerraceLife";
 import { getProject, val } from "@theatre/core";
-import {
-  SheetProvider,
-  PerspectiveCamera,
-  useCurrentSheet,
-} from "@theatre/r3f";
+import { SheetProvider, PerspectiveCamera } from "@theatre/r3f";
 import animationState from "../../lib/Portfolio.theatre-project-state.json";
 import RoadmapSidebar from "./overlays/RoadmapSidebar";
 import { steps } from "./overlays/step";
@@ -68,10 +58,11 @@ const sheet = project.sheet("Scene");
 const SCROLL_DAMPING = 0.2;
 const SCROLL_MAX_SPEED = 0.3;
 
+// drives the module-level `sheet` (the same one SheetProvider hands to the camera)
 function AnimatedScene({ onActiveStepUpdate }) {
-  const sheet = useCurrentSheet();
   const scroll = useScroll();
   const currentActiveStepRef = useRef("intro");
+  const lastPositionRef = useRef(-1);
   // self-hosted "sunset" HDR (null if it failed, the scene still works without it)
   const envMap = use(loadEnvironmentMap());
 
@@ -79,6 +70,9 @@ function AnimatedScene({ onActiveStepUpdate }) {
     if (!sheet) return;
     const sequenceLength = val(sheet.sequence.pointer.length);
     const position = scroll.offset * sequenceLength;
+    // the scroll stands still most of the time: nothing to recompute then
+    if (position === lastPositionRef.current) return;
+    lastPositionRef.current = position;
     sheet.sequence.position = position;
 
     // Find active step
@@ -150,8 +144,7 @@ export default function PortfolioViewer({ assetBytes }) {
             frameloop={sceneWarm ? "always" : "never"}
           >
             {/* <ContextLostHandler onContextLost={() => setSceneReady(false)} /> */}
-            <AdaptiveDpr pixelated />
-            <AdaptiveEvents />
+            {/* lower resolution on slow devices: see PerformanceMonitor in HouseScene */}
             <ScrollControls
               pages={val(sheet.sequence.pointer.length) || 0}
               damping={SCROLL_DAMPING}
