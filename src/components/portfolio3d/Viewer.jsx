@@ -13,6 +13,7 @@ import {
 import * as THREE from "three";
 import { setConsoleFunction } from "three";
 import HouseScene from "./scene/HouseScene";
+import TerraceLife from "./scene/TerraceLife";
 import { getProject, val } from "@theatre/core";
 import {
   SheetProvider,
@@ -159,6 +160,8 @@ export default function PortfolioViewer({ assetBytes }) {
               <SheetProvider sheet={sheet}>
                 <Suspense fallback={null}>
                   <HouseScene activeStep={activeStep} />
+                  {/* before SceneWarmup, so its shaders are compiled behind the loader */}
+                  <TerraceLife />
                   <AnimatedScene onActiveStepUpdate={setActiveStep} />
                   <SmoothKeyboardNavigation />
                   <CameraDragOrbit />
