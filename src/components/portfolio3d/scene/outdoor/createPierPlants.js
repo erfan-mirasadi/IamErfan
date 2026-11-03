@@ -12,9 +12,15 @@ const PALM = "LIVISTONA_CHINENSIS_LIVISTONA_CHINENSIS_Mat_0002";
 // palm size (bigger than the planter = grown into a small tree), turn
 const FLOOR_Y = -1.021;
 const SPOTS = [
+  // right edge, from the house corner to the front corner
   { x: 7.85, z: 12.45, pot: [1.15, 1.6], palm: 1.55, turn: 0.4 },
   { x: 8.0, z: 13.8, pot: [0.95, 1.25], palm: 1.1, turn: 2.2 },
   { x: 7.75, z: 15.1, pot: [1.3, 1.9], palm: 2.05, turn: 4.1 },
+  // front edge, coming toward the camera (only seen when looking to the right)
+  { x: 6.3, z: 15.15, pot: [1.0, 1.35], palm: 1.2, turn: 1.3 },
+  { x: 4.55, z: 15.05, pot: [1.15, 1.6], palm: 1.5, turn: 5.3 },
+  { x: 2.8, z: 15.15, pot: [0.95, 1.25], palm: 1.05, turn: 3.0 },
+  { x: 1.05, z: 15.1, pot: [1.05, 1.45], palm: 1.3, turn: 0.9 },
 ];
 
 const _matrix = new THREE.Matrix4();
