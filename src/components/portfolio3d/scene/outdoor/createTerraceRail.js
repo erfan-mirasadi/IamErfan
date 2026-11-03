@@ -143,6 +143,8 @@ export function createTerraceRail(house) {
 
   return {
     object: group,
+    // tops of the posts, in order along the railing (the string lights hang from them)
+    postTops: posts.map((p) => at(p, RAIL_HEIGHT + 0.1)),
     dispose() {
       curbGeometry.dispose();
       railGeometry.dispose();

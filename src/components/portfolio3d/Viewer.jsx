@@ -8,6 +8,8 @@ import * as THREE from "three";
 import { setConsoleFunction } from "three";
 import HouseScene from "./scene/HouseScene";
 import TerraceLife from "./scene/TerraceLife";
+import DayNightController from "./daylight/DayNightController";
+import DayNightToggle from "./overlays/DayNightToggle";
 import { getProject, val } from "@theatre/core";
 import { SheetProvider, PerspectiveCamera } from "@theatre/r3f";
 import animationState from "../../lib/Portfolio.theatre-project-state.json";
@@ -153,7 +155,8 @@ export default function PortfolioViewer({ assetBytes }) {
               <SheetProvider sheet={sheet}>
                 <Suspense fallback={null}>
                   <HouseScene activeStep={activeStep} />
-                  {/* before SceneWarmup, so its shaders are compiled behind the loader */}
+                  {/* before SceneWarmup, so their shaders are compiled behind the loader */}
+                  <DayNightController />
                   <TerraceLife />
                   <AnimatedScene onActiveStepUpdate={setActiveStep} />
                   <SmoothKeyboardNavigation />
@@ -188,12 +191,13 @@ export default function PortfolioViewer({ assetBytes }) {
           src="/images/dirty-window-3.jpg"
           alt="dirty-window-3"
           fill
+          // opacity in CSS: it fades down at night (globals.css)
+          className="dirty-glass-glow"
           style={{
             objectFit: "cover",
             objectPosition: "center",
             pointerEvents: "none",
             mixBlendMode: "screen",
-            opacity: 0.15,
             zIndex: 0,
           }}
           sizes="100vw"
@@ -205,6 +209,7 @@ export default function PortfolioViewer({ assetBytes }) {
         <RoadmapSidebar activeStep={activeStep} />
         <Hint activeStep={activeStep} />
         <ContactMe activeStep={activeStep} />
+        <DayNightToggle />
       </div>
     </>
   );

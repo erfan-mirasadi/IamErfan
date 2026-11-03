@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, use } from "react";
-import { useThree } from "@react-three/fiber";
+import { Suspense, use, useCallback, useEffect, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Center, PerformanceMonitor } from "@react-three/drei";
 import {
   EffectComposer,
@@ -19,6 +19,8 @@ import BikeInteractable from "../interactables/BikeInteractable";
 import SetarInteractable from "../interactables/SetarInteractable";
 import ProjectInteractable from "../interactables/ProjectInteractable";
 import { loadHouseModel } from "../loading/sceneLoader";
+import { daylight } from "../daylight/daylight";
+import { NIGHT, blendInto, captureDay, mix } from "../daylight/lighting";
 
 // When a device can't keep up it renders a little fewer pixels instead. Turning lights
 // or post-processing off (as before) changed the look and made every material compile
@@ -31,6 +33,76 @@ export default function HouseScene({ activeStep = "intro" }) {
   use(loadHouseModel());
   const setDpr = useThree((state) => state.setDpr);
 
+  // the composer only resizes its buffers when the canvas size changes: without this
+  // a lower DPR shrank just the final copy, the scene itself still rendered full size
+  const composerRef = useRef(null);
+  const dpr = useThree((state) => state.viewport.dpr);
+  const size = useThree((state) => state.size);
+  useEffect(() => {
+    composerRef.current?.setSize(size.width, size.height);
+  }, [dpr, size]);
+
+  // day <-> night for the house lights and post effects: colors and intensities only
+  // (uniforms), never adding or hiding a light, so nothing has to recompile
+  const sunRef = useRef(null);
+  const sunDiscRef = useRef(null);
+  const shaftRef = useRef(null);
+  const windowRef = useRef(null);
+  const fillRef = useRef(null);
+  const lampRef = useRef(null);
+  const bloomRef = useRef(null);
+  const vignetteRef = useRef(null);
+  const dayRef = useRef(null);
+  const appliedRef = useRef(-1);
+  // callback refs: the effect wrappers JSON.stringify their props (a ref object would
+  // end up holding the effect itself, which can't be stringified)
+  const setBloom = useCallback((effect) => {
+    bloomRef.current = effect;
+  }, []);
+  const setVignette = useCallback((effect) => {
+    vignetteRef.current = effect;
+  }, []);
+
+  useFrame(() => {
+    const night = daylight.night;
+    if (night === appliedRef.current) return;
+    const sun = sunRef.current;
+    const disc = sunDiscRef.current;
+    const shaft = shaftRef.current;
+    const windowLight = windowRef.current;
+    const fill = fillRef.current;
+    const lamp = lampRef.current;
+    const bloom = bloomRef.current;
+    const vignette = vignetteRef.current;
+    if (!sun || !disc || !shaft || !windowLight || !fill || !lamp || !bloom || !vignette) return;
+
+    // the day look is whatever is declared below, read once before the first change
+    if (!dayRef.current) {
+      dayRef.current = {
+        sun: captureDay(sun.color, sun.intensity),
+        window: captureDay(windowLight.color, windowLight.intensity),
+        fill: captureDay(fill.color, fill.intensity),
+        lamp: captureDay(lamp.color, lamp.intensity),
+        shaft: captureDay(shaft.material.color, shaft.material.opacity),
+        sunGlow: disc.material.emissiveIntensity,
+        bloom: bloom.intensity,
+        vignette: vignette.darkness,
+      };
+    }
+    const day = dayRef.current;
+    appliedRef.current = night;
+
+    sun.intensity = blendInto(sun.color, day.sun, NIGHT.sun, night);
+    windowLight.intensity = blendInto(windowLight.color, day.window, NIGHT.window, night);
+    fill.intensity = blendInto(fill.color, day.fill, NIGHT.fill, night);
+    lamp.intensity = blendInto(lamp.color, day.lamp, NIGHT.lamp, night);
+    shaft.material.opacity = blendInto(shaft.material.color, day.shaft, NIGHT.shaft, night);
+    disc.material.emissiveIntensity = mix(day.sunGlow, NIGHT.sunGlow, night);
+    disc.visible = night < 0.999;
+    bloom.intensity = mix(day.bloom, NIGHT.bloom, night);
+    vignette.darkness = mix(day.vignette, NIGHT.vignette, night);
+  });
+
   return (
     <Center>
       <PerformanceMonitor
@@ -42,6 +114,7 @@ export default function HouseScene({ activeStep = "intro" }) {
 
       {/* lighting and static meshes */}
       <directionalLight
+        ref={sunRef}
         castShadow
         color={"#f2c183"}
         intensity={6}
@@ -55,7 +128,7 @@ export default function HouseScene({ activeStep = "intro" }) {
         shadow-camera-near={0.1}
         shadow-camera-far={25}
       />
-      <mesh name="sun" position={[-3.8, 2, 14]}>
+      <mesh ref={sunDiscRef} name="sun" position={[-3.8, 2, 14]}>
         <sphereGeometry args={[2, 32, 32]} />
         <meshStandardMaterial
           color="#fcfaea"
@@ -64,7 +137,7 @@ export default function HouseScene({ activeStep = "intro" }) {
           toneMapped={false}
         />
       </mesh>
-      <mesh position={[-3.9, 1.5, 11.9]}>
+      <mesh ref={shaftRef} position={[-3.9, 1.5, 11.9]}>
         <coneGeometry args={[3, 4.7, 15, 1, true]} />
         <meshBasicMaterial
           transparent
@@ -74,6 +147,7 @@ export default function HouseScene({ activeStep = "intro" }) {
         />
       </mesh>
       <rectAreaLight
+        ref={windowRef}
         width={5.8}
         height={5.8}
         color={"#f2c183"}
@@ -81,8 +155,9 @@ export default function HouseScene({ activeStep = "intro" }) {
         position={[-3.8, 1.9, 12]}
         castShadow={false}
       />
-      <ambientLight color={"#e8b880"} intensity={3} />
+      <ambientLight ref={fillRef} color={"#e8b880"} intensity={3} />
       <pointLight
+        ref={lampRef}
         color={"#f3e914"}
         intensity={0.25}
         distance={2.5}
@@ -105,10 +180,10 @@ export default function HouseScene({ activeStep = "intro" }) {
         <ProjectInteractable targetName="Project_3" activeStep={activeStep} />
         <ProjectInteractable targetName="Project_4" activeStep={activeStep} />
 
-        <EffectComposer multisampling={0} disableNormalPass>
-          <Bloom intensity={0.1} />
+        <EffectComposer ref={composerRef} multisampling={0} disableNormalPass>
+          <Bloom ref={setBloom} intensity={0.1} />
           <Noise opacity={0.04} />
-          <Vignette eskil={false} offset={0.1} darkness={0.9} />
+          <Vignette ref={setVignette} eskil={false} offset={0.1} darkness={0.9} />
         </EffectComposer>
       </Suspense>
     </Center>

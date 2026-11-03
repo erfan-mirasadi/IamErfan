@@ -11,6 +11,7 @@ import { PALM_LEAVES as PALM, PALM_PLANTER as PLANTER } from "../model/houseNode
 // palm size (bigger than the planter = grown into a small tree), turn.
 // They stand just inside the curb (see createTerraceRail).
 const FLOOR_Y = -1.021;
+export const TERRACE_FLOOR_Y = FLOOR_Y;
 const SPOTS = [
   // right edge, from the house corner to the front corner
   { x: 7.75, z: 12.45, pot: [1.15, 1.6], palm: 1.55, turn: 0.4 },
@@ -22,6 +23,46 @@ const SPOTS = [
   { x: 2.8, z: 14.8, pot: [0.95, 1.25], palm: 1.05, turn: 3.0 },
   { x: 1.05, z: 14.82, pot: [1.05, 1.45], palm: 1.3, turn: 0.9 },
 ];
+export const PLANT_SPOTS = SPOTS.map(({ x, z }) => ({ x, z }));
+
+// sea breeze on the leaves (vertex shader only): the higher a leaf, the more it moves
+const WIND = new THREE.Vector2(0.07, 0.035); // house units at the top of a palm
+const PALM_HEIGHT = 3.4;
+
+function windyLeaves(material) {
+  const leaves = material.clone(); // same textures, only the vertex shader differs
+  const time = { value: 0 };
+  leaves.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = time;
+    shader.uniforms.uWind = { value: WIND };
+    shader.uniforms.uFloorY = { value: FLOOR_Y };
+    shader.uniforms.uPalmHeight = { value: PALM_HEIGHT };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nuniform float uTime;\nuniform vec2 uWind;\nuniform float uFloorY;\nuniform float uPalmHeight;",
+      )
+      .replace(
+        "#include <project_vertex>",
+        /* glsl */ `
+        vec4 mvPosition = vec4( transformed, 1.0 );
+        #ifdef USE_INSTANCING
+          mvPosition = instanceMatrix * mvPosition;
+          float lift = clamp( ( mvPosition.y - uFloorY ) / uPalmHeight, 0.0, 1.6 );
+          vec3 root = instanceMatrix[ 3 ].xyz; // every palm keeps its own rhythm
+          float phase = root.x * 0.9 + root.z * 1.7;
+          float gust = sin( uTime * 1.1 + phase ) * 0.65 + sin( uTime * 2.3 + phase * 1.3 ) * 0.35;
+          float flutter = sin( uTime * 6.5 + dot( mvPosition.xyz, vec3( 4.1, 3.3, 2.7 ) ) ) * 0.22;
+          mvPosition.xz += uWind * ( gust + flutter ) * lift * lift;
+        #endif
+        mvPosition = modelViewMatrix * mvPosition;
+        gl_Position = projectionMatrix * mvPosition;
+        `,
+      );
+  };
+  leaves.customProgramCacheKey = () => "terrace-palm-wind";
+  return { material: leaves, time };
+}
 
 const _matrix = new THREE.Matrix4();
 
@@ -77,8 +118,12 @@ export function createPierPlants(house) {
   const group = new THREE.Group();
   group.name = "PierPlants";
 
-  const meshes = parts.map(({ source }) => {
-    const mesh = new THREE.InstancedMesh(source.geometry, source.material, SPOTS.length);
+  // the terrace palms move in the wind (the kitchen one indoors stays still)
+  const wind = windyLeaves(palm.material);
+  const materials = [planter.material, wind.material];
+
+  const meshes = parts.map(({ source }, part) => {
+    const mesh = new THREE.InstancedMesh(source.geometry, materials[part], SPOTS.length);
     mesh.name = `PierPlants_${source.name}`;
     // out of the sun's shadow camera anyway, so skip the shadow passes
     mesh.castShadow = false;
@@ -104,8 +149,9 @@ export function createPierPlants(house) {
 
   return {
     object: group,
-    // cameraInHouse: camera position in house model coordinates
-    update(cameraInHouse) {
+    // cameraInHouse: camera position in house model coordinates, time: seconds
+    update(cameraInHouse, time) {
+      wind.time.value = time;
       camera = cameraInHouse;
       for (let i = 1; i < order.length; i++) {
         if (distance(order[i - 1]) < distance(order[i])) {
@@ -115,8 +161,9 @@ export function createPierPlants(house) {
       }
     },
     dispose() {
-      // geometry and materials belong to the house model, only free the instance data
+      // geometry and the planter material belong to the house model
       meshes.forEach((mesh) => mesh.dispose());
+      wind.material.dispose();
     },
   };
 }

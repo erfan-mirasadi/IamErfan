@@ -128,7 +128,10 @@ export function createSeagulls() {
       bird.center.z + Math.sin(angle) * bird.radius,
     );
 
-  function update(time) {
+  // night: 0..1, the gulls go to sleep at night
+  function update(time, night = 0) {
+    mesh.visible = night < 0.5;
+    if (!mesh.visible) return;
     material.uniforms.uTime.value = time;
     birds.forEach((bird, i) => {
       const angle = bird.angle + time * bird.speed;

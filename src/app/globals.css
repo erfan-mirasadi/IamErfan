@@ -774,3 +774,151 @@ body.project-overlay-open .project-overlay-container {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Day / night switch: a small terminal-style toggle. It starts on the visitor's
+ * own clock and flips the 3D scene right away (see daylight/daylight.js)
+ * ------------------------------------------------------------------------ */
+.daynight {
+  position: fixed;
+  z-index: 40;
+  top: 22px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-vt323);
+  color: #cffafe;
+  pointer-events: none; /* only the switch itself takes clicks */
+}
+
+@media (max-width: 767px) {
+  .daynight {
+    top: auto;
+    left: 16px;
+    bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+  }
+}
+
+.daynight-switch {
+  position: relative;
+  width: 64px;
+  height: 30px;
+  padding: 0;
+  color: inherit;
+  background: rgba(2, 12, 14, 0.72);
+  border: 1px solid rgba(57, 231, 232, 0.55);
+  border-radius: 999px;
+  box-shadow:
+    0 0 16px rgba(57, 231, 232, 0.22),
+    inset 0 0 10px rgba(57, 231, 232, 0.08);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+.daynight-switch:hover {
+  border-color: #a5f3fc;
+  box-shadow:
+    0 0 22px rgba(57, 231, 232, 0.42),
+    inset 0 0 10px rgba(57, 231, 232, 0.12);
+}
+
+.daynight-switch:focus-visible {
+  outline: 2px solid #a5f3fc;
+  outline-offset: 3px;
+}
+
+/* the knob is the sun by day and the moon by night */
+.daynight-thumb {
+  position: absolute;
+  z-index: 1;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff7d6, #ffc46b 60%, #ff9f3a);
+  box-shadow: 0 0 12px rgba(255, 190, 90, 0.85);
+  transition:
+    transform 0.55s cubic-bezier(0.65, 0, 0.35, 1),
+    background 0.55s ease,
+    box-shadow 0.55s ease;
+}
+
+.daynight[data-mode="night"] .daynight-thumb {
+  transform: translateX(34px);
+  background: radial-gradient(circle at 35% 35%, #ffffff, #d6e2ff 55%, #8fa6ff);
+  box-shadow: 0 0 14px rgba(160, 185, 255, 0.95);
+}
+
+/* the other side shows where the switch goes */
+.daynight-icon {
+  position: absolute;
+  top: 50%;
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  transform: translateY(-50%);
+  transition: opacity 0.4s ease;
+}
+
+.daynight-icon.is-sun {
+  left: 8px;
+  color: rgba(255, 210, 138, 0.6);
+  opacity: 0;
+}
+
+.daynight-icon.is-moon {
+  right: 8px;
+  color: rgba(165, 243, 252, 0.65);
+}
+
+.daynight-star {
+  animation: loader-caret 1.6s steps(1) infinite;
+}
+
+.daynight[data-mode="night"] .daynight-icon.is-sun {
+  opacity: 1;
+}
+
+.daynight[data-mode="night"] .daynight-icon.is-moon {
+  opacity: 0;
+}
+
+.daynight-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(57, 231, 232, 0.6);
+}
+
+.daynight-mode {
+  font-size: 18px;
+}
+
+.daynight-clock {
+  font-size: 14px;
+  color: rgba(207, 250, 254, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daynight-thumb {
+    transition: none;
+  }
+}
+
+/* the bright "screen" dirt layer on the glass would wash the night out */
+.dirty-glass-glow {
+  opacity: 0.15;
+  transition: opacity 1.2s ease;
+}
+
+html[data-daylight="night"] .dirty-glass-glow {
+  opacity: 0.05;
+}
