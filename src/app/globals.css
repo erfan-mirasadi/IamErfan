@@ -783,8 +783,10 @@ body.project-overlay-open .project-overlay-container {
   position: fixed;
   z-index: 40;
   top: 22px;
-  left: 24px;
+  /* top right, just left of the step roadmap (it reaches the top on shorter screens) */
+  right: 132px;
   display: flex;
+  flex-direction: row-reverse; /* switch in the corner, label on its left */
   align-items: center;
   gap: 10px;
   font-family: var(--font-vt323);
@@ -792,10 +794,18 @@ body.project-overlay-open .project-overlay-container {
   pointer-events: none; /* only the switch itself takes clicks */
 }
 
+/* tall screens: the roadmap starts well below, the corner itself is free */
+@media (min-width: 768px) and (min-height: 940px) {
+  .daynight {
+    right: 24px;
+  }
+}
+
+/* phones: the step roadmap runs along the top, so the switch sits bottom right */
 @media (max-width: 767px) {
   .daynight {
     top: auto;
-    left: 16px;
+    right: 16px;
     bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px));
   }
 }
@@ -891,6 +901,7 @@ body.project-overlay-open .project-overlay-container {
 .daynight-label {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 2px;
   line-height: 1;
   letter-spacing: 0.12em;

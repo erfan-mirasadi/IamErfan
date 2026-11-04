@@ -7,7 +7,7 @@ const SAG = 0.2; // how far a string hangs down in the middle of a span
 const BULB_SPACING = 0.32;
 const BULB_RADIUS = 0.042;
 const WIRE_SEGMENTS = 12; // per span
-const GLOW = 14; // emissive intensity at night (HDR, bloom picks it up)
+const GLOW = 6; // emissive intensity at night: warm glow, not blown-out white
 const SWAY = 0.035; // meters at the middle of a span
 
 // point on a span: straight line from a to b, hanging down as a parabola

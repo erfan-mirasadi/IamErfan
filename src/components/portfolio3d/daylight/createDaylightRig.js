@@ -1,23 +1,14 @@
 import { daylight, getMode } from "./daylight";
-import { EMISSIVE_MATERIALS, NIGHT, mix } from "./lighting";
+import { NIGHT, mix } from "./lighting";
 import { createNightSky } from "./createNightSky";
 
 const SMOOTHING = 0.35; // seconds: the switch starts at once and settles in about a second
 
 // Drives `daylight.night` toward the current mode and applies the parts of the night
-// look that belong to the whole scene: sky dome, sky light, glowing screens.
+// look that belong to the whole scene: the sky dome and the light coming from the sky.
 // (The house lights and post effects are blended in HouseScene, where they live.)
-export function createDaylightRig(house) {
+export function createDaylightRig() {
   const sky = createNightSky();
-
-  const emissive = [];
-  const seen = new Set();
-  house.traverse((object) => {
-    const material = object.material;
-    if (!object.isMesh || !material || seen.has(material)) return;
-    seen.add(material);
-    if (EMISSIVE_MATERIALS.test(material.name)) emissive.push([material, material.emissiveIntensity]);
-  });
 
   // open the page straight in the right mode, no fade on load
   daylight.night = getMode() === "night" ? 1 : 0;
@@ -42,9 +33,6 @@ export function createDaylightRig(house) {
       expectedBackground = mix(1, NIGHT.background, night);
       scene.backgroundIntensity = expectedBackground;
       scene.environmentIntensity = mix(1, NIGHT.environment, night);
-      for (const [material, base] of emissive) {
-        material.emissiveIntensity = base * mix(1, NIGHT.emissiveBoost, night);
-      }
     },
     dispose() {
       sky.dispose();

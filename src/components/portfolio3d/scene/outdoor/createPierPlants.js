@@ -11,7 +11,6 @@ import { PALM_LEAVES as PALM, PALM_PLANTER as PLANTER } from "../model/houseNode
 // palm size (bigger than the planter = grown into a small tree), turn.
 // They stand just inside the curb (see createTerraceRail).
 const FLOOR_Y = -1.021;
-export const TERRACE_FLOOR_Y = FLOOR_Y;
 const SPOTS = [
   // right edge, from the house corner to the front corner
   { x: 7.75, z: 12.45, pot: [1.15, 1.6], palm: 1.55, turn: 0.4 },
@@ -23,7 +22,6 @@ const SPOTS = [
   { x: 2.8, z: 14.8, pot: [0.95, 1.25], palm: 1.05, turn: 3.0 },
   { x: 1.05, z: 14.82, pot: [1.05, 1.45], palm: 1.3, turn: 0.9 },
 ];
-export const PLANT_SPOTS = SPOTS.map(({ x, z }) => ({ x, z }));
 
 // sea breeze on the leaves (vertex shader only): the higher a leaf, the more it moves
 const WIND = new THREE.Vector2(0.07, 0.035); // house units at the top of a palm

@@ -7,7 +7,7 @@ import * as THREE from "three";
 
 // where the moon hangs: in the open sky right of the house in the intro view
 export const MOON_DIR = new THREE.Vector3(0.905, 0.423, -0.032).normalize();
-const MOON_SIZE = 0.042; // radius as a share of the screen height (round on any lens)
+const MOON_SIZE = 0.048; // radius as a share of the screen height (round on any lens)
 const DOME_RADIUS = 50;
 const STAR_RADIUS = 45;
 const STAR_COUNT = 1400;
@@ -55,9 +55,8 @@ const domeFragment = /* glsl */ `
     vec3 zenith = vec3(0.0016, 0.0025, 0.007);
     vec3 c = mix(horizon, mid, smoothstep(0.0, 0.2, h));
     c = mix(c, zenith, smoothstep(0.2, 0.8, h));
-    // moonlit haze around the moon
-    float m = max(dot(d, uMoonDir), 0.0);
-    c += vec3(0.05, 0.065, 0.12) * pow(m, 14.0) + vec3(0.012, 0.016, 0.03) * pow(m, 3.0);
+    // (the moon's glow is drawn in screen space in moon(): measured in directions,
+    // the very wide lens stretched it into an oval that changed as the camera turned)
     // faint teal / violet city glow far away on the horizon
     c += vec3(0.012, 0.03, 0.045) * exp(-h * 30.0);
     return c;
@@ -89,17 +88,69 @@ const domeFragment = /* glsl */ `
     return vec3(0.85, 0.9, 1.0) * glow * sin(k * 3.14159) * 4.0;
   }
 
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+      v += a * noise(p);
+      p = p * 2.03 + 17.0;
+      a *= 0.5;
+    }
+    return v;
+  }
+
+  // one dark lunar sea: a soft blob with a ragged, noisy coastline
+  float mare(vec2 q, vec2 center, vec2 size) {
+    float dist = length((q - center) / size) + (fbm(q * 4.0 + center * 9.0) - 0.5) * 0.5;
+    return smoothstep(1.15, 0.75, dist);
+  }
+
+  // the near side of a full moon, seas roughly where the real ones are
+  // (q: -1..1 across the disc, y up)
+  float moonAlbedo(vec2 q) {
+    float seas = 0.0;
+    seas = max(seas, mare(q, vec2(-0.33, 0.42), vec2(0.30, 0.25))); // Imbrium
+    seas = max(seas, mare(q, vec2(0.13, 0.40), vec2(0.15, 0.15))); // Serenitatis
+    seas = max(seas, mare(q, vec2(0.31, 0.15), vec2(0.21, 0.17))); // Tranquillitatis
+    seas = max(seas, mare(q, vec2(0.67, 0.30), vec2(0.11, 0.09))); // Crisium
+    seas = max(seas, mare(q, vec2(-0.62, 0.02), vec2(0.28, 0.44)) * 0.85); // Procellarum
+    seas = max(seas, mare(q, vec2(-0.18, -0.33), vec2(0.17, 0.13))); // Nubium
+    seas = max(seas, mare(q, vec2(0.52, -0.06), vec2(0.12, 0.17))); // Fecunditatis
+    seas = max(seas, mare(q, vec2(0.33, -0.25), vec2(0.08, 0.08))); // Nectaris
+    seas = max(seas, mare(q, vec2(-0.52, -0.38), vec2(0.10, 0.09))); // Humorum
+    seas = max(seas, mare(q, vec2(0.02, 0.71), vec2(0.42, 0.07)) * 0.7); // Frigoris
+    float albedo = mix(0.97, 0.42, seas) * (0.84 + 0.3 * fbm(q * 13.0));
+    // bright young craters: Tycho with its long rays, Copernicus, Kepler
+    vec2 t = q - vec2(-0.1, -0.66);
+    // noise around a circle: thin streaks, no seam where the angle wraps
+    vec2 around = t / max(length(t), 1e-4);
+    float rays = pow(noise(around * 12.0 + 5.0), 5.0) * exp(-length(t) * 3.4);
+    albedo += exp(-dot(t, t) * 1100.0) * 0.7 + rays * 0.2 * (1.0 - 0.6 * seas);
+    vec2 c = q - vec2(-0.3, 0.13);
+    albedo += exp(-dot(c, c) * 1500.0) * 0.4;
+    vec2 k = q - vec2(-0.52, 0.12);
+    albedo += exp(-dot(k, k) * 2400.0) * 0.3;
+    return albedo;
+  }
+
+  // drawn in screen pixels around where the moon projects, so it stays perfectly round
+  // and keeps its face whatever the lens and camera do (like the point stars)
   vec3 moon() {
     if (vMoon.z < 0.5) return vec3(0.0);
     vec2 center = (vMoon.xy * 0.5 + 0.5) * uResolution;
     float radius = uMoonSize * uResolution.y;
     vec2 q = (gl_FragCoord.xy - center) / radius;
     float r = length(q);
-    float disc = smoothstep(1.0, 0.93, r);
-    float maria = noise(q * 2.6 + 3.1) * 0.65 + noise(q * 6.5 + 1.3) * 0.35;
-    vec3 surface = vec3(1.0, 0.96, 0.88) * (0.78 + 0.22 * maria) * (1.0 - 0.22 * r * r);
-    vec3 halo = vec3(0.22, 0.28, 0.45) * exp(-max(r - 1.0, 0.0) * 1.8) * (1.0 - disc);
-    return surface * disc * 3.0 + halo * 0.6;
+    float aa = 1.5 / radius;
+    float disc = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, r);
+    vec3 surface = vec3(0.0);
+    if (r < 1.0 + aa) {
+      float limb = mix(1.0, 0.78, r * r * r);
+      surface = vec3(1.0, 0.97, 0.91) * moonAlbedo(q) * limb * 1.5;
+    }
+    float outside = max(r - 1.0, 0.0);
+    vec3 halo = vec3(0.5, 0.58, 0.78) * (exp(-outside * 5.0) * 0.14 + exp(-outside * 1.1) * 0.045);
+    return surface * disc + halo * (1.0 - disc);
   }
 
   vec3 sea(vec3 d) {

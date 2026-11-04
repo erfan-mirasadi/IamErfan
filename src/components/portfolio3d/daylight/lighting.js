@@ -9,19 +9,16 @@ export const NIGHT = {
   // light at the round window: warm glow spilling out of the house
   window: ["#ffb26a", 3.5],
   fill: ["#555a80", 2.1],
-  // small lamp at the back of the house
-  lamp: ["#ffc978", 2.2],
+  // small lamp inside the garden plants: only warmer, about as bright as by day
+  lamp: ["#ffd08c", 0.3],
   // the sun shaft through the window turns into a moon beam
   shaft: ["#86a2ff", 0.05],
   sunGlow: 0, // the sun sphere's emissive intensity
-  bloom: 0.55,
+  bloom: 0.16, // a touch more than by day (0.1): screens and lamps glow, nothing blows out
   vignette: 0.97,
   background: 0.12, // the sunset sky, covered by the night sky dome anyway
   environment: 0.32, // reflections and ambient light from the sky
-  emissiveBoost: 1.6, // screens and light strips glow a bit more
 };
-
-export const EMISSIVE_MATERIALS = /EmissiveLightTrim|ScreensGraphics|WireTrim/;
 
 export const mix = (a, b, t) => a + (b - a) * t;
 
