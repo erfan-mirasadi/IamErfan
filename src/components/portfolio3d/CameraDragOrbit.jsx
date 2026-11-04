@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { cameraLook } from "./cameraLook";
 
 const _offsetQuat = new THREE.Quaternion();
 const _pitchQuat = new THREE.Quaternion();
@@ -156,6 +157,9 @@ export default function CameraDragOrbit() {
     camera.quaternion.copy(baseQuat.current).multiply(_offsetQuat);
     // Remember for next frame's comparison
     lastAppliedQuat.current.copy(camera.quaternion);
+    // for the night sky: the view without the cursor offset
+    cameraLook.base.copy(baseQuat.current);
+    cameraLook.ready = true;
 
     const fov = baseFov.current + motion.current.fovKick;
     if (camera.fov !== fov) {
