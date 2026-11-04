@@ -1,55 +1,28 @@
 import * as THREE from "three";
-import { cameraLook } from "../cameraLook";
 
-// Night sky: a dome around the camera painted in one shader (deep blue gradient, a big
-// moon, the moon's glitter on a moving sea, a shooting star now and then) plus a
-// field of twinkling stars. Two draw calls, only drawn at night. It follows the camera
-// (the sky is "at infinity") and stays inside the camera's far plane (60).
-
-// where the moon hangs: in the open sky right of the house in the intro view
-export const MOON_DIR = new THREE.Vector3(0.904, 0.413, -0.108).normalize();
-const MOON_SIZE = 0.062; // radius as a share of the screen height (round on any lens)
-const MOON_MAP = "/textures/moon.jpg"; // CesiumJS lunar map, Apache-2.0 (public/textures/NOTICE.txt)
+// Night sky: a dome around the camera painted in one shader (deep blue gradient, a
+// moving sea, a shooting star now and then) plus a field of twinkling stars. Two draw
+// calls, only drawn at night. It follows the camera (the sky is "at infinity") and
+// stays inside the camera's far plane (60).
 const DOME_RADIUS = 50;
 const STAR_RADIUS = 45;
 const STAR_COUNT = 1400;
 
-const common = /* glsl */ `
-  float hash1(float n) { return fract(sin(n) * 43758.5453123); }
-  float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash2(i), hash2(i + vec2(1.0, 0.0)), u.x),
-               mix(hash2(i + vec2(0.0, 1.0)), hash2(i + vec2(1.0, 1.0)), u.x), u.y);
-  }
-`;
-
 const domeVertex = /* glsl */ `
-  uniform vec3 uMoonDir;
   varying vec3 vDir;
-  varying vec3 vMoon; // moon center in NDC (xy) and whether it is in front (z)
   void main() {
     vDir = position;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-    // same matrices as this draw, so the moon never lags behind the camera
-    vec4 moon = projectionMatrix * viewMatrix * vec4(cameraPosition + uMoonDir * 40.0, 1.0);
-    vMoon = vec3(moon.xy / max(moon.w, 1e-4), step(0.0, moon.w));
   }
 `;
 
 const domeFragment = /* glsl */ `
   uniform float uTime;
   uniform float uOpacity;
-  uniform vec3 uMoonDir;
-  uniform vec2 uResolution;
-  uniform float uMoonSize;
-  uniform sampler2D uMoonMap;
   varying vec3 vDir;
-  varying vec3 vMoon;
-  ${common}
+
+  float hash1(float n) { return fract(sin(n) * 43758.5453123); }
 
   vec3 skyColor(vec3 d) {
     float h = max(d.y, 0.0);
@@ -58,8 +31,6 @@ const domeFragment = /* glsl */ `
     vec3 zenith = vec3(0.0016, 0.0025, 0.007);
     vec3 c = mix(horizon, mid, smoothstep(0.0, 0.2, h));
     c = mix(c, zenith, smoothstep(0.2, 0.8, h));
-    // (the moon's glow is drawn in screen space in moon(): measured in directions,
-    // the very wide lens stretched it into an oval that changed as the camera turned)
     // faint teal / violet city glow far away on the horizon
     c += vec3(0.012, 0.03, 0.045) * exp(-h * 30.0);
     return c;
@@ -91,49 +62,6 @@ const domeFragment = /* glsl */ `
     return vec3(0.85, 0.9, 1.0) * glow * sin(k * 3.14159) * 4.0;
   }
 
-  float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    for (int i = 0; i < 4; i++) {
-      v += a * noise(p);
-      p = p * 2.03 + 17.0;
-      a *= 0.5;
-    }
-    return v;
-  }
-
-  // drawn in screen pixels around where the moon projects, so it stays perfectly round
-  // whatever the lens does. The face is a real lunar map (near side, as a full moon)
-  vec3 moon() {
-    if (vMoon.z < 0.5) return vec3(0.0);
-    vec2 center = (vMoon.xy * 0.5 + 0.5) * uResolution;
-    float radius = uMoonSize * uResolution.y;
-    vec2 q = (gl_FragCoord.xy - center) / radius;
-    float r = length(q);
-    float aa = 1.5 / radius;
-    float disc = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, r);
-    vec3 surface = vec3(0.0);
-    if (r < 1.0 + aa) {
-      vec2 s = q / max(r, 1.0); // edge pixels sample the rim
-      float z = sqrt(max(1.0 - dot(s, s), 0.0));
-      vec2 uv = vec2(0.5 + atan(s.x, z) / 6.28318, 0.5 + asin(clamp(s.y, -1.0, 1.0)) / 3.14159);
-      // the map is low contrast (raw values ~0.4 seas to ~0.7 highlands): stretch it
-      float albedo = smoothstep(0.37, 0.7, texture2D(uMoonMap, uv).r);
-      albedo *= 0.93 + 0.14 * fbm(q * 26.0); // fine grain, stays crisp on big screens
-      float limb = mix(1.0, 0.8, pow(r, 4.0));
-      // bright highlands, cool grey seas. Over 1 on purpose: the vignette darkens this
-      // corner of the screen, and the bloom gives the bright face its soft halo
-      vec3 seas = vec3(0.3, 0.33, 0.38);
-      vec3 highlands = vec3(1.75, 1.72, 1.66);
-      surface = mix(seas, highlands, albedo) * limb;
-    }
-    // the big soft blue glow around it, like moonlight in a hazy sky
-    float outside = max(r - 1.0, 0.0);
-    vec3 glow = vec3(0.5, 0.62, 1.0) *
-      (exp(-outside * 2.6) * 0.45 + exp(-outside * 0.7) * 0.12 + exp(-outside * 0.22) * 0.035);
-    return surface * disc + glow * (1.0 - disc);
-  }
-
   vec3 sea(vec3 d) {
     float down = max(-d.y, 0.0012);
     float dist = 1.0 / down; // the eye is one unit above the water
@@ -148,17 +76,12 @@ const domeFragment = /* glsl */ `
     vec3 r = reflect(d, n);
     r.y = abs(r.y);
     float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(n, -d), 0.0), 5.0);
-    vec3 c = mix(vec3(0.0015, 0.003, 0.009), skyColor(r), fresnel);
-    // the moon's glitter path on the waves
-    float facing = max(dot(r, uMoonDir), 0.0);
-    c += vec3(0.75, 0.82, 1.0) * pow(facing, 70.0) * 0.35; // soft silver path
-    c += vec3(1.0, 0.96, 0.9) * pow(facing, 420.0) * 6.0; // sparkles on the waves
-    return c;
+    return mix(vec3(0.0015, 0.003, 0.009), skyColor(r), fresnel);
   }
 
   void main() {
     vec3 d = normalize(vDir);
-    vec3 color = d.y >= 0.0 ? skyColor(d) + shootingStar(d) + moon() : sea(d);
+    vec3 color = d.y >= 0.0 ? skyColor(d) + shootingStar(d) : sea(d);
     gl_FragColor = vec4(color, uOpacity);
     #include <colorspace_fragment>
   }
@@ -225,40 +148,13 @@ function starField() {
   return geometry;
 }
 
-// rotation from the camera's scroll-path view to the view on screen (the cursor
-// look-around). The moon and stars follow it, so they keep their place on screen
-// while the house turns under the cursor, the way a far-away backdrop behaves.
-const _offset = new THREE.Quaternion();
-const _position = new THREE.Vector3();
-const ONE = new THREE.Vector3(1, 1, 1);
-function lookOffset(camera) {
-  if (!cameraLook.ready) return _offset.identity();
-  return _offset.copy(cameraLook.base).invert().premultiply(camera.quaternion);
-}
-
 export function createNightSky() {
-  // grey until the 18 KB lunar map is in (swapping a texture never recompiles)
-  const placeholder = new THREE.DataTexture(new Uint8Array([150, 150, 150, 255]), 1, 1);
-  placeholder.needsUpdate = true;
-  const moonMap = { value: placeholder };
-  const loaded = new THREE.TextureLoader().load(MOON_MAP, (texture) => {
-    // read as raw values (no sRGB decode): the shader maps them to brightness itself
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.anisotropy = 4;
-    moonMap.value = texture;
-  });
-
-  const moonDir = new THREE.Vector3().copy(MOON_DIR);
   const domeMaterial = new THREE.ShaderMaterial({
     vertexShader: domeVertex,
     fragmentShader: domeFragment,
     uniforms: {
       uTime: { value: 0 },
       uOpacity: { value: 0 },
-      uMoonDir: { value: moonDir },
-      uResolution: { value: new THREE.Vector2(1, 1) },
-      uMoonSize: { value: MOON_SIZE },
-      uMoonMap: moonMap,
     },
     side: THREE.BackSide,
     transparent: true,
@@ -269,15 +165,6 @@ export function createNightSky() {
   // first of the transparent things (palm leaves, glass...), behind everything else
   dome.renderOrder = -10;
   dome.frustumCulled = false;
-  // the moon is drawn in pixels of whatever target this draw goes to (the composer's
-  // buffer, which can differ from the canvas for a frame when the resolution changes)
-  // (runs right before this draw, after every camera update of the frame: no lag)
-  dome.onBeforeRender = (renderer, scene, camera) => {
-    const target = renderer.getRenderTarget();
-    if (target) domeMaterial.uniforms.uResolution.value.set(target.width, target.height);
-    else renderer.getDrawingBufferSize(domeMaterial.uniforms.uResolution.value);
-    moonDir.copy(MOON_DIR).applyQuaternion(lookOffset(camera));
-  };
 
   const starMaterial = new THREE.ShaderMaterial({
     vertexShader: starVertex,
@@ -291,11 +178,6 @@ export function createNightSky() {
   stars.name = "NightSkyStars";
   stars.renderOrder = -9;
   stars.frustumCulled = false;
-  // same as the moon: the star field turns with the cursor offset, so it stays put
-  stars.onBeforeRender = (renderer, scene, camera) => {
-    _position.setFromMatrixPosition(camera.matrixWorld);
-    stars.matrixWorld.compose(_position, lookOffset(camera), ONE);
-  };
 
   const group = new THREE.Group();
   group.name = "NightSky";
@@ -318,8 +200,6 @@ export function createNightSky() {
       domeMaterial.dispose();
       stars.geometry.dispose();
       starMaterial.dispose();
-      placeholder.dispose();
-      loaded.dispose();
     },
   };
 }

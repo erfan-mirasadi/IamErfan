@@ -1,3 +1,0 @@
-moon.jpg: lunar surface map from CesiumJS (Assets/Textures/moonSmall.jpg),
-Copyright 2011-2025 CesiumJS Contributors, licensed under the Apache License 2.0
-https://github.com/CesiumGS/cesium/blob/main/LICENSE.md
