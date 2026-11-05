@@ -19,7 +19,12 @@ function lastLoginLine(date) {
 function CloseGlyph() {
   return (
     <svg viewBox="0 0 8 8" aria-hidden="true">
-      <path d="M2 2l4 4M6 2L2 6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+      <path
+        d="M2 2l4 4M6 2L2 6"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -27,7 +32,12 @@ function CloseGlyph() {
 function MinimizeGlyph() {
   return (
     <svg viewBox="0 0 8 8" aria-hidden="true">
-      <path d="M1.5 4h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path
+        d="M1.5 4h5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -35,7 +45,7 @@ function MinimizeGlyph() {
 function ZoomGlyph() {
   return (
     <svg viewBox="0 0 8 8" aria-hidden="true">
-      <path d="M2 2h3.3L2 5.3zM6 6H2.7L6 2.7z" fill="currentColor" />
+      <path d="M2 2h3L2 5zM6 6H3L6 3z" fill="currentColor" />
     </svg>
   );
 }
@@ -44,8 +54,14 @@ function ZoomGlyph() {
 function FolderIcon() {
   return (
     <svg className="mac-term-folder" viewBox="0 0 16 13" aria-hidden="true">
-      <path d="M1 2.2C1 1.54 1.54 1 2.2 1h3.5l1.5 1.5h6.6c.66 0 1.2.54 1.2 1.2V5H1z" fill="#5aa7ec" />
-      <path d="M1 4.2h14v7.6c0 .66-.54 1.2-1.2 1.2H2.2C1.54 13 1 12.46 1 11.8z" fill="#8ec5f6" />
+      <path
+        className="is-back"
+        d="M1 2.2C1 1.54 1.54 1 2.2 1h3.5l1.5 1.5h6.6c.66 0 1.2.54 1.2 1.2V5H1z"
+      />
+      <path
+        className="is-front"
+        d="M1 4.2h14v7.6c0 .66-.54 1.2-1.2 1.2H2.2C1.54 13 1 12.46 1 11.8z"
+      />
     </svg>
   );
 }
@@ -59,6 +75,8 @@ export default function TerminalModal({
   unlockSequence = false, // after the script: the fast "install" log, then auto close
 }) {
   const modalRef = useRef(null);
+  const bodyRef = useRef(null);
+  const contentRef = useRef(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -159,6 +177,21 @@ export default function TerminalModal({
     };
   }, [dragging, isMaximized]);
 
+  // like a real terminal the window keeps its size: once the output reaches the
+  // bottom, every new line scrolls the older ones up
+  useEffect(() => {
+    const body = bodyRef.current;
+    const content = contentRef.current;
+    if (!open || !body || !content || typeof ResizeObserver === "undefined")
+      return;
+    const stickToBottom = () => {
+      body.scrollTop = body.scrollHeight;
+    };
+    const observer = new ResizeObserver(stickToBottom);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -179,7 +212,7 @@ export default function TerminalModal({
           transform: `translate(${position.x}px, ${position.y}px)`,
           transformOrigin: "top left",
         }}
-        className="mac-term-window relative z-10 min-w-[320px] sm:min-w-[480px] md:min-w-[500px] lg:min-w-[620px] xl:min-w-[700px] max-w-[90vw] min-h-[240px] sm:min-h-[320px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px]"
+        className="mac-term-window relative z-10 min-w-[320px] sm:min-w-[480px] md:min-w-[500px] lg:min-w-[620px] xl:min-w-[700px] max-w-[90vw] h-[280px] sm:h-[320px] lg:h-[350px] xl:h-[400px] max-h-[85vh]"
       >
         {/* window header: macOS Terminal title bar */}
         <div onMouseDown={handleMouseDown} className="mac-term-titlebar">
@@ -220,33 +253,37 @@ export default function TerminalModal({
 
         {/* modal content */}
         <div
-          className={`mac-term-body px-[10px] pt-1.5 pb-5 whitespace-pre-line ${childrenClassName}`}
-          style={{ minHeight: 240 }}
+          ref={bodyRef}
+          className={`mac-term-body px-[10px] pt-1.5 pb-3 whitespace-pre-line ${childrenClassName}`}
         >
-          <div className="whitespace-pre-wrap">{lastLogin}</div>
-          {Array.isArray(children) ? (
-            <>
+          <div ref={contentRef}>
+            <div className="whitespace-pre-wrap">{lastLogin}</div>
+            {Array.isArray(children) ? (
+              <>
+                <TypewriterScript
+                  script={children}
+                  speed={50}
+                  onDone={
+                    unlockSequence ? () => setScriptTyped(true) : undefined
+                  }
+                  cursor={!installing}
+                  prompt={<TerminalPrompt />}
+                />
+                {installing && <UnlockSequence onFinish={handleClose} />}
+              </>
+            ) : (
               <TypewriterScript
-                script={children}
+                script={[
+                  {
+                    type: "normal",
+                    text: typeof children === "string" ? children : "",
+                  },
+                ]}
                 speed={50}
-                onDone={unlockSequence ? () => setScriptTyped(true) : undefined}
-                cursor={!installing}
                 prompt={<TerminalPrompt />}
               />
-              {installing && <UnlockSequence onFinish={handleClose} />}
-            </>
-          ) : (
-            <TypewriterScript
-              script={[
-                {
-                  type: "normal",
-                  text: typeof children === "string" ? children : "",
-                },
-              ]}
-              speed={50}
-              prompt={<TerminalPrompt />}
-            />
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

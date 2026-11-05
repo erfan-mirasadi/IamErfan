@@ -935,28 +935,32 @@ html[data-daylight="night"] .dirty-glass-glow {
 }
 
 /* ---------------------------------------------------------------------------
- * Terminal windows: macOS Terminal look (zsh, robbyrussell prompt). Colors are the
- * ones of the reference screenshot, in Display P3 where the browser supports it.
+ * Terminal windows: macOS Terminal look (zsh, robbyrussell prompt). Every color is
+ * taken from the reference screenshot through its own display profile: sRGB first,
+ * then the exact Display P3 value where the browser can show it.
  * ------------------------------------------------------------------------ */
 .mac-term-window {
+  display: flex;
+  flex-direction: column;
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(3, 3, 3, 0.9);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  /* slightly see-through like the reference; what shows through is already blurred
+   * by the modal backdrop, so no second (costly) backdrop-filter here */
+  background: rgba(3, 3, 3, 0.92);
   /* dark outline + the thin light rim macOS draws inside it */
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.85),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
     0 24px 70px rgba(0, 0, 0, 0.55);
 }
 
 .mac-term-titlebar {
   position: relative;
+  flex: none;
   display: flex;
   align-items: center;
   height: 28px;
-  padding: 0 9px;
+  padding: 0 8px;
   background: #2b2b2b;
   box-shadow: inset 0 1px 0 #404040;
   border-bottom: 1px solid #000;
@@ -991,7 +995,18 @@ html[data-daylight="night"] .dirty-glass-glow {
   height: 13px;
 }
 
-/* traffic lights: exact macOS sizes, glyphs show while the group is hovered */
+.mac-term-folder .is-front {
+  fill: rgb(104, 198, 240);
+}
+
+.mac-term-folder .is-back {
+  fill: rgb(78, 168, 222);
+}
+
+/* traffic lights: 12px, 8px apart, glyphs show while the group is hovered.
+ * Like the reference: a light crescent on the top and bottom edge, the fill a bit
+ * lighter right under the top edge, darkest in the upper middle, and a soft round
+ * light in the lower half */
 .mac-term-lights {
   position: relative;
   z-index: 1;
@@ -1006,8 +1021,18 @@ html[data-daylight="night"] .dirty-glass-glow {
   width: 12px;
   height: 12px;
   padding: 0;
+  border: 0;
   border-radius: 50%;
   cursor: pointer;
+  background-color: var(--d);
+  background-image:
+    radial-gradient(36% 37% at 50% 80%, var(--glow) 46%, transparent),
+    linear-gradient(to bottom, var(--top) 9%, var(--d) 30%);
+  box-shadow:
+    inset 0 0.45px 0 var(--rim0),
+    inset 0 0.9px 0 var(--rim1),
+    inset 0 -0.45px 0 var(--rim0),
+    inset 0 -0.9px 0 var(--rim1);
 }
 
 .mac-term-light svg {
@@ -1026,34 +1051,58 @@ html[data-daylight="night"] .dirty-glass-glow {
   outline-offset: 1px;
 }
 
+.mac-term-light:active {
+  filter: brightness(0.82);
+}
+
 .mac-term-light.is-close {
-  background: #ff5f57;
-  box-shadow: inset 0 0 0 0.5px #e0443e;
+  --d: rgb(246, 82, 69);
+  --top: rgb(248, 101, 91);
+  --glow: rgb(241, 105, 99);
+  --rim0: rgb(255, 196, 185);
+  --rim1: rgb(255, 154, 145);
   color: #4d0000;
 }
 
 .mac-term-light.is-minimize {
-  background: #febc2e;
-  box-shadow: inset 0 0 0 0.5px #dea123;
+  --d: rgb(251, 179, 0);
+  --top: rgb(250, 182, 0);
+  --glow: rgb(253, 206, 49);
+  --rim0: rgb(247, 246, 110);
+  --rim1: rgb(255, 219, 65);
   color: #995700;
 }
 
 .mac-term-light.is-zoom {
-  background: #28c840;
-  box-shadow: inset 0 0 0 0.5px #1aab29;
+  --d: rgb(0, 188, 0);
+  --top: rgb(78, 198, 35);
+  --glow: rgb(83, 196, 60);
+  --rim0: rgb(175, 247, 142);
+  --rim1: rgb(127, 240, 97);
   color: #006500;
 }
 
-.mac-term-light:active {
-  filter: brightness(0.8);
-}
-
 .mac-term-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 13px;
   line-height: 1.35;
-  color: rgb(158, 245, 86);
-  color: color(display-p3 0.62 0.96 0.337);
+  color: rgb(40, 254, 15);
+  /* thin overlay-style scrollbar, only noticeable when there is something to scroll */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.mac-term-body::-webkit-scrollbar {
+  width: 7px;
+}
+
+.mac-term-body::-webkit-scrollbar-thumb {
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.22);
 }
 
 @media (min-width: 640px) {
@@ -1071,28 +1120,70 @@ html[data-daylight="night"] .dirty-glass-glow {
 /* robbyrussell: green arrow (red after a failed command), cyan directory */
 .mac-term-arrow {
   font-weight: 700;
-  color: rgb(144, 223, 82);
-  color: color(display-p3 0.565 0.875 0.322);
+  color: rgb(39, 231, 31);
 }
 
 .mac-term-arrow.is-failed {
-  color: rgb(210, 93, 50);
-  color: color(display-p3 0.824 0.365 0.196);
+  color: rgb(255, 60, 29);
 }
 
 .mac-term-dir {
   font-weight: 700;
-  color: rgb(157, 232, 238);
-  color: color(display-p3 0.616 0.91 0.933);
+  color: rgb(47, 239, 240);
 }
 
-/* Door terminal, first visit: the fast "install" log after Access granted
- * (see UnlockSequence.jsx). Fixed height, new lines push the old ones up and out. */
-.unlock-log {
-  height: calc(1.35em * 10);
-  animation: unlock-log-open 0.22s ease-out both;
+@supports (color: color(display-p3 0 0 0)) {
+  .mac-term-body {
+    color: color(display-p3 0.478 0.983 0.307);
+  }
+
+  .mac-term-arrow {
+    color: color(display-p3 0.436 0.895 0.295);
+  }
+
+  .mac-term-arrow.is-failed {
+    color: color(display-p3 0.922 0.308 0.195);
+  }
+
+  .mac-term-dir {
+    color: color(display-p3 0.457 0.924 0.932);
+  }
+
+  .mac-term-folder .is-front {
+    fill: color(display-p3 0.5 0.767 0.924);
+  }
+
+  .mac-term-folder .is-back {
+    fill: color(display-p3 0.38 0.66 0.86);
+  }
+
+  .mac-term-light.is-close {
+    --d: color(display-p3 0.892 0.368 0.305);
+    --top: color(display-p3 0.904 0.432 0.382);
+    --glow: color(display-p3 0.879 0.443 0.407);
+    --rim0: color(display-p3 0.966 0.776 0.735);
+    --rim1: color(display-p3 1 0.628 0.586);
+  }
+
+  .mac-term-light.is-minimize {
+    --d: color(display-p3 0.942 0.712 0);
+    --top: color(display-p3 0.941 0.723 0.211);
+    --glow: color(display-p3 0.962 0.814 0.33);
+    --rim0: color(display-p3 0.967 0.963 0.509);
+    --rim1: color(display-p3 1 0.866 0.378);
+  }
+
+  .mac-term-light.is-zoom {
+    --d: color(display-p3 0.314 0.727 0);
+    --top: color(display-p3 0.44 0.765 0.266);
+    --glow: color(display-p3 0.447 0.757 0.317);
+    --rim0: color(display-p3 0.746 0.96 0.6);
+    --rim1: color(display-p3 0.609 0.93 0.455);
+  }
 }
 
+/* Door terminal, first visit: the fast "install" output after Access granted
+ * (see UnlockSequence.jsx). It flows on under the typed lines like any output. */
 .unlock-log .is-dim {
   opacity: 0.6;
 }
@@ -1103,17 +1194,4 @@ html[data-daylight="night"] .dirty-glass-glow {
 
 .unlock-log .is-bright {
   font-weight: 700;
-}
-
-@keyframes unlock-log-open {
-  from {
-    height: 0;
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .unlock-log {
-    animation: none;
-  }
 }

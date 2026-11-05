@@ -50,7 +50,7 @@ const STEPS = (() => {
   const bar = (text, frames, wait) => steps.push({ text, tone: "out", frames, wait });
 
   line("sudo unlock --door front --as traveler", "cmd", 140);
-  line("Password: ********", "dim", 170);
+  line("Password:", "dim", 170);
   line("verifying access token ......... ok", "out", 70);
   line("==> resolving dependencies", "bright", 60);
   line("+ curiosity@latest", "out", 35);
@@ -126,12 +126,15 @@ export default function UnlockSequence({ onFinish }) {
   const done = tick >= TICKS.length - 1;
 
   return (
-    <div
-      className="unlock-log flex flex-col justify-end overflow-hidden"
-      aria-hidden="true"
-    >
+    // output flows on right under the typed lines, one line after the other (the
+    // window scrolls once it is full). w-0 + min-w-full: long lines wrap at the
+    // window's width instead of stretching the window
+    <div className="unlock-log w-0 min-w-full" aria-hidden="true">
       {STEPS.slice(0, index + 1).map((step, i) => (
-        <div key={i} className={`truncate whitespace-pre ${TONES[step.tone]}`}>
+        <div
+          key={i}
+          className={`whitespace-pre-wrap break-words ${TONES[step.tone]}`}
+        >
           {(step.tone === "cmd" || step.tone === "prompt") && <TerminalPrompt />}
           {stepText(step, i < index ? 1 : fill)}
           {i === index && <span className={done ? "animate-pulse" : ""}>█</span>}
