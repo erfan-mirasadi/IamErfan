@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { isTouchDevice, startGyroLook } from "./gyroLook";
 
 const _offsetQuat = new THREE.Quaternion();
 const _pitchQuat = new THREE.Quaternion();
@@ -76,9 +77,19 @@ export default function CameraDragOrbit() {
     };
 
     // cursor left the window -> glide back to the authored view
+    // (a finger lifting off the screen is no reason to, the gyroscope looks there)
     const onPointerOut = (e) => {
+      if (e.pointerType === "touch") return;
       if (!e.relatedTarget) recenter();
     };
+
+    // phones: the gyroscope moves the same look target the cursor moves on desktop
+    const stopGyroLook = isTouchDevice()
+      ? startGyroLook((yaw, pitch) => {
+          if (yaw !== null) target.current.yaw = yaw;
+          target.current.pitch = pitch;
+        })
+      : null;
 
     motionQuery.addEventListener("change", onMotionPreference);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
@@ -90,6 +101,7 @@ export default function CameraDragOrbit() {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerout", onPointerOut);
       window.removeEventListener("blur", recenter);
+      stopGyroLook?.();
     };
   }, [gl]);
 
