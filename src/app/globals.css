@@ -933,3 +933,187 @@ body.project-overlay-open .project-overlay-container {
 html[data-daylight="night"] .dirty-glass-glow {
   opacity: 0.05;
 }
+
+/* ---------------------------------------------------------------------------
+ * Terminal windows: macOS Terminal look (zsh, robbyrussell prompt). Colors are the
+ * ones of the reference screenshot, in Display P3 where the browser supports it.
+ * ------------------------------------------------------------------------ */
+.mac-term-window {
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(3, 3, 3, 0.9);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  /* dark outline + the thin light rim macOS draws inside it */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.85),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.mac-term-titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 9px;
+  background: #2b2b2b;
+  box-shadow: inset 0 1px 0 #404040;
+  border-bottom: 1px solid #000;
+  cursor: move;
+  user-select: none;
+}
+
+.mac-term-title {
+  position: absolute;
+  inset: 0 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #a7a7a7;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.mac-term-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mac-term-folder {
+  flex: none;
+  width: 16px;
+  height: 13px;
+}
+
+/* traffic lights: exact macOS sizes, glyphs show while the group is hovered */
+.mac-term-lights {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+}
+
+.mac-term-light {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.mac-term-light svg {
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+}
+
+.mac-term-lights:hover .mac-term-light svg,
+.mac-term-light:focus-visible svg {
+  opacity: 1;
+}
+
+.mac-term-light:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 1px;
+}
+
+.mac-term-light.is-close {
+  background: #ff5f57;
+  box-shadow: inset 0 0 0 0.5px #e0443e;
+  color: #4d0000;
+}
+
+.mac-term-light.is-minimize {
+  background: #febc2e;
+  box-shadow: inset 0 0 0 0.5px #dea123;
+  color: #995700;
+}
+
+.mac-term-light.is-zoom {
+  background: #28c840;
+  box-shadow: inset 0 0 0 0.5px #1aab29;
+  color: #006500;
+}
+
+.mac-term-light:active {
+  filter: brightness(0.8);
+}
+
+.mac-term-body {
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.35;
+  color: rgb(158, 245, 86);
+  color: color(display-p3 0.62 0.96 0.337);
+}
+
+@media (min-width: 640px) {
+  .mac-term-body {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .mac-term-body {
+    font-size: 16px;
+  }
+}
+
+/* robbyrussell: green arrow (red after a failed command), cyan directory */
+.mac-term-arrow {
+  font-weight: 700;
+  color: rgb(144, 223, 82);
+  color: color(display-p3 0.565 0.875 0.322);
+}
+
+.mac-term-arrow.is-failed {
+  color: rgb(210, 93, 50);
+  color: color(display-p3 0.824 0.365 0.196);
+}
+
+.mac-term-dir {
+  font-weight: 700;
+  color: rgb(157, 232, 238);
+  color: color(display-p3 0.616 0.91 0.933);
+}
+
+/* Door terminal, first visit: the fast "install" log after Access granted
+ * (see UnlockSequence.jsx). Fixed height, new lines push the old ones up and out. */
+.unlock-log {
+  height: calc(1.35em * 10);
+  animation: unlock-log-open 0.22s ease-out both;
+}
+
+.unlock-log .is-dim {
+  opacity: 0.6;
+}
+
+.unlock-log .is-hex {
+  opacity: 0.38;
+}
+
+.unlock-log .is-bright {
+  font-weight: 700;
+}
+
+@keyframes unlock-log-open {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unlock-log {
+    animation: none;
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { openModal } from "../ModalManager";
+import { shouldPlayUnlock } from "../UnlockSequence";
 import RaycastClickable from "./RaycastClickable";
 
 const handlePointerEnter = () => {
@@ -35,6 +36,8 @@ export default function DoorLockInteractable({
       onClick={() => {
         openModal({
           scriptData,
+          // first visit: fast green "install" log after Access granted, then it closes
+          unlockSequence: shouldPlayUnlock(),
         });
       }}
       onPointerEnter={handlePointerEnter}

@@ -36,12 +36,24 @@ function getEraseSpeed() {
   );
 }
 
-export default function TypewriterScript({ script, className = "" }) {
+export default function TypewriterScript({
+  script,
+  className = "",
+  onDone, // called once the whole script is typed
+  cursor = true, // false hides the blinking cursor (e.g. when more output follows)
+  prompt = null, // shown at the start of every line (the shell prompt)
+}) {
   const [lines, setLines] = useState([]);
   const [currentLine, setCurrentLine] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   const currentLineRef = useRef("");
   const timeoutRef = useRef(null);
+  // latest callback without restarting the typing when the parent re-renders
+  const onDoneRef = useRef(onDone);
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
 
   useEffect(() => {
     currentLineRef.current = currentLine;
@@ -167,6 +179,7 @@ export default function TypewriterScript({ script, className = "" }) {
     function runScript() {
       if (part >= script.length) {
         setShowCursor(true);
+        onDoneRef.current?.();
         return;
       }
       const item = script[part];
@@ -216,11 +229,17 @@ export default function TypewriterScript({ script, className = "" }) {
       }}
     >
       {lines.map((line, i) => (
-        <div key={i}>{line}</div>
+        <div key={i}>
+          {prompt}
+          {line}
+        </div>
       ))}
       <div>
+        {(cursor || currentLine) && prompt}
         {currentLine}
-        <span className="animate-pulse">{showCursor ? "█" : " "}</span>
+        {cursor && (
+          <span className="animate-pulse">{showCursor ? "█" : " "}</span>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,54 @@
 import React, { useState, useRef, useEffect } from "react";
 import TypewriterScript from "./TypewriterScript";
+import TerminalPrompt from "./TerminalPrompt";
+import UnlockSequence from "./UnlockSequence";
+
+const TITLE = "erfan — erfan@mac — ~ — -zsh — 80×24";
+
+// "Last login: Wed Nov  4 12:21:54 on ttys000", in the visitor's own clock
+function lastLoginLine(date) {
+  const day = date.toLocaleString("en-US", { weekday: "short" });
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const time = [date.getHours(), date.getMinutes(), date.getSeconds()]
+    .map((n) => String(n).padStart(2, "0"))
+    .join(":");
+  return `Last login: ${day} ${month} ${String(date.getDate()).padStart(2, " ")} ${time} on ttys000`;
+}
+
+// macOS traffic light glyphs (they show while the buttons are hovered)
+function CloseGlyph() {
+  return (
+    <svg viewBox="0 0 8 8" aria-hidden="true">
+      <path d="M2 2l4 4M6 2L2 6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function MinimizeGlyph() {
+  return (
+    <svg viewBox="0 0 8 8" aria-hidden="true">
+      <path d="M1.5 4h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ZoomGlyph() {
+  return (
+    <svg viewBox="0 0 8 8" aria-hidden="true">
+      <path d="M2 2h3.3L2 5.3zM6 6H2.7L6 2.7z" fill="currentColor" />
+    </svg>
+  );
+}
+
+// the little blue folder in front of the title
+function FolderIcon() {
+  return (
+    <svg className="mac-term-folder" viewBox="0 0 16 13" aria-hidden="true">
+      <path d="M1 2.2C1 1.54 1.54 1 2.2 1h3.5l1.5 1.5h6.6c.66 0 1.2.54 1.2 1.2V5H1z" fill="#5aa7ec" />
+      <path d="M1 4.2h14v7.6c0 .66-.54 1.2-1.2 1.2H2.2C1.54 13 1 12.46 1 11.8z" fill="#8ec5f6" />
+    </svg>
+  );
+}
 
 export default function TerminalModal({
   open,
@@ -7,11 +56,15 @@ export default function TerminalModal({
   children,
   modalContainerClassName = "",
   childrenClassName = "",
+  unlockSequence = false, // after the script: the fast "install" log, then auto close
 }) {
   const modalRef = useRef(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [scriptTyped, setScriptTyped] = useState(false);
+  const installing = unlockSequence && scriptTyped;
+  const [lastLogin] = useState(() => lastLoginLine(new Date()));
   const dragOffset = useRef({ x: 0, y: 0 });
   const originalPosition = useRef({ x: 0, y: 0 });
   const originalSize = useRef({ width: 0, height: 0 });
@@ -126,65 +179,62 @@ export default function TerminalModal({
           transform: `translate(${position.x}px, ${position.y}px)`,
           transformOrigin: "top left",
         }}
-        className="relative z-10 min-w-[320px] sm:min-w-[480px] md:min-w-[500px] lg:min-w-[620px] xl:min-w-[700px] max-w-[90vw] min-h-[240px] sm:min-h-[320px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] rounded-2xl shadow-md
-                   bg-gradient-to-r from-[#282c34] via-[#1f2227] to-[#282c34]"
+        className="mac-term-window relative z-10 min-w-[320px] sm:min-w-[480px] md:min-w-[500px] lg:min-w-[620px] xl:min-w-[700px] max-w-[90vw] min-h-[240px] sm:min-h-[320px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px]"
       >
-        {/* window header */}
-        <div
-          onMouseDown={handleMouseDown}
-          className="flex items-center h-8 px-4 rounded-t-2xl bg-gray-600 border-b border-[#1e1e1e] cursor-move select-none relative"
-        >
-          {/* window controls */}
-          <div className="flex gap-1.5 sm:gap-2 items-center z-20 relative group">
-            {/* close button */}
-            <span
+        {/* window header: macOS Terminal title bar */}
+        <div onMouseDown={handleMouseDown} className="mac-term-titlebar">
+          {/* traffic lights (same actions as before: close, minimize, maximize) */}
+          <div className="mac-term-lights">
+            <button
+              type="button"
               onClick={onClose}
-              role="button"
-              tabIndex={0}
-              className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#fc5c5b] border border-[#d94f4e] shadow-sm
-                 cursor-pointer flex items-center justify-center text-[8px] sm:text-[10px] text-black/40 font-bold leading-none"
+              aria-label="Close"
+              className="mac-term-light is-close"
             >
-              <span className="opacity-0 group-hover:opacity-100">×</span>
-            </span>
-
-            {/* minimize button */}
-            <span
+              <CloseGlyph />
+            </button>
+            <button
+              type="button"
               onClick={() => handleClose()}
-              role="button"
-              tabIndex={0}
-              className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#fdbc40] border border-[#d9bb7a] shadow-sm cursor-pointer flex items-center justify-center text-[8px] sm:text-[12px] text-black/40 font-bold leading-none"
+              aria-label="Minimize"
+              className="mac-term-light is-minimize"
             >
-              <span className="opacity-0 group-hover:opacity-100">-</span>
-            </span>
-
-            {/* maximize button */}
-            <span
+              <MinimizeGlyph />
+            </button>
+            <button
+              type="button"
               onClick={handleMaximize}
-              role="button"
-              tabIndex={0}
-              className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#34c749] border border-[#2da742] shadow-sm cursor-pointer flex items-center justify-center text-[8px] sm:text-[10px] text-black/40 font-bold leading-none"
+              aria-label={isMaximized ? "Restore" : "Maximize"}
+              className="mac-term-light is-zoom"
             >
-              <span className="opacity-0 group-hover:opacity-100">
-                {isMaximized ? "□" : "□"}
-              </span>
-            </span>
+              <ZoomGlyph />
+            </button>
           </div>
 
           {/* window title */}
-          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-            <span className="text-xs text-gray-400 font-mono tracking-wide">
-              Terminal — bash
-            </span>
+          <div className="mac-term-title">
+            <FolderIcon />
+            <span>{TITLE}</span>
           </div>
         </div>
 
         {/* modal content */}
         <div
-          className={`px-6 pt-4 pb-6 text-white/80 font-vt323 font-bold text-2xl whitespace-pre-line ${childrenClassName}`}
+          className={`mac-term-body px-[10px] pt-1.5 pb-5 whitespace-pre-line ${childrenClassName}`}
           style={{ minHeight: 240 }}
         >
+          <div className="whitespace-pre-wrap">{lastLogin}</div>
           {Array.isArray(children) ? (
-            <TypewriterScript script={children} speed={50} />
+            <>
+              <TypewriterScript
+                script={children}
+                speed={50}
+                onDone={unlockSequence ? () => setScriptTyped(true) : undefined}
+                cursor={!installing}
+                prompt={<TerminalPrompt />}
+              />
+              {installing && <UnlockSequence onFinish={handleClose} />}
+            </>
           ) : (
             <TypewriterScript
               script={[
@@ -194,6 +244,7 @@ export default function TerminalModal({
                 },
               ]}
               speed={50}
+              prompt={<TerminalPrompt />}
             />
           )}
         </div>

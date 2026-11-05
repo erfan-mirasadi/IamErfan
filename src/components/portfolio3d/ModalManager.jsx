@@ -20,6 +20,7 @@ export function openModal({
   scriptData,
   modalContainerClassName = "",
   childrenClassName = "",
+  unlockSequence = false,
 }) {
   const root = getModalRoot();
   const handleClose = () => closeModal();
@@ -30,6 +31,7 @@ export function openModal({
       onClose={handleClose}
       modalContainerClassName={modalContainerClassName}
       childrenClassName={childrenClassName}
+      unlockSequence={unlockSequence}
     >
       {scriptData}
     </TerminalModal>
