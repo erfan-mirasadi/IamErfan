@@ -1182,7 +1182,7 @@ html[data-daylight="night"] .dirty-glass-glow {
   }
 }
 
-/* Door terminal, first visit: the fast "install" output after Access granted
+/* Door terminal, once per page load: the fast "install" output after Access granted
  * (see UnlockSequence.jsx). It flows on under the typed lines like any output. */
 .unlock-log .is-dim {
   opacity: 0.6;

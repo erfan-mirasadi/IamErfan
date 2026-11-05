@@ -36,7 +36,7 @@ export default function DoorLockInteractable({
       onClick={() => {
         openModal({
           scriptData,
-          // first visit: fast green "install" log after Access granted, then it closes
+          // once per page load: fast "install" log after Access granted, then it closes
           unlockSequence: shouldPlayUnlock(),
         });
       }}

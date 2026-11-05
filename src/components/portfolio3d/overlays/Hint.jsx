@@ -4,32 +4,22 @@ import { useEffect, useState } from "react";
 
 // One-time tip about the glowing markers. It shows up where the old green hint used
 // to open (2s after reaching these steps), closes itself after 10s or on click,
-// and never comes back on this browser.
+// and only comes back after the page is reloaded.
 const SHOW_AT_STEPS = ["Key", "Workshop"];
 const SHOW_DELAY = 2000; // ms after arriving at the step
 const VISIBLE_SECONDS = 10;
-const SEEN_KEY = "iamerfan:glow-tip-seen";
 
 const LINES = ["> see something glowing?", "> yep. click it."];
 
-let seenThisVisit = false; // backup when storage is blocked (private mode etc.)
+// once per page load: kept in memory only, so a refresh shows it again
+let seenThisVisit = false;
 
 function alreadySeen() {
-  if (seenThisVisit) return true;
-  try {
-    return window.localStorage.getItem(SEEN_KEY) === "1";
-  } catch {
-    return false;
-  }
+  return seenThisVisit;
 }
 
 function markSeen() {
   seenThisVisit = true;
-  try {
-    window.localStorage.setItem(SEEN_KEY, "1");
-  } catch {
-    // nothing to do, seenThisVisit still keeps it to once
-  }
 }
 
 // mini version of the glowing markers in the scene

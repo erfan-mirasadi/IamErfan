@@ -3,30 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import TerminalPrompt from "./TerminalPrompt";
 
-// First visit only: after "Access granted" the door terminal "installs" the house in a
-// fast log (sudo + brew/npm + boot-log vibe), then the window closes by itself.
-const PLAYED_KEY = "iamerfan:door-unlock-played";
+// Once per page load: after "Access granted" the door terminal "installs" the house
+// in a fast log (sudo + brew/npm + boot-log vibe), then the window closes by itself.
+// Opening the door again shows the plain terminal, until the page is reloaded.
 const HOLD_AFTER_MS = 900; // last line stays a moment before the window closes
 const BAR_WIDTH = 16;
 
-let playedThisVisit = false; // backup when storage is blocked (private mode etc.)
+// kept in memory only, so a refresh plays it again
+let playedThisVisit = false;
 
 export function shouldPlayUnlock() {
-  if (playedThisVisit) return false;
-  try {
-    return window.localStorage.getItem(PLAYED_KEY) !== "1";
-  } catch {
-    return true;
-  }
+  return !playedThisVisit;
 }
 
 function markPlayed() {
   playedThisVisit = true;
-  try {
-    window.localStorage.setItem(PLAYED_KEY, "1");
-  } catch {
-    // nothing to do, playedThisVisit still keeps it to once
-  }
 }
 
 // a few lines of "binary" scrolling by, same bytes on every visit
