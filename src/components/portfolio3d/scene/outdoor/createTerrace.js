@@ -37,7 +37,7 @@ export function createTerrace(house) {
       cameraInHouse.setFromMatrixPosition(camera.matrixWorld).applyMatrix4(toHouse);
       plants?.update(cameraInHouse, time);
       lights?.update(time, night);
-      vines.update(time);
+      vines.update(time, night);
     },
     dispose() {
       parts.forEach((part) => part.dispose());

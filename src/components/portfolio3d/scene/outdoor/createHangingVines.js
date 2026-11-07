@@ -5,9 +5,11 @@ import { VINE_LEAVES_URL } from "../../loading/sceneAssets";
 // wall of the intro view gets some life. Real leaf photos (ez-tree's ash and oak leaf
 // cards, MIT, see public/textures/NOTICE.txt) hang from the edges as bent cards that
 // chain into long strands, in a darker back layer and a brighter front one.
-// One instanced mesh, one 640x512 texture: one draw call, and alpha-tested, so no
-// sorting. The breeze lives in the vertex shader. (The sun lights this facade from the
-// front and its shadow camera does not reach it, so they cast no shadows.)
+// One instanced mesh, one 640x512 texture: one draw call. Soft blended edges like the
+// palms' leaves, without sorting per frame: the cards are stored back to front (the
+// camera always looks at this facade from the front). The breeze lives in the vertex
+// shader. (The sun lights this facade from the front and its shadow camera does not
+// reach it, so they cast no shadows.)
 
 // house model coordinates (same space as the GLB, see createTerraceRail)
 const EDGES = [
@@ -93,16 +95,24 @@ const FRAGMENT_COVERAGE = /* glsl */ `
   diffuseColor.a *= 1.0 + mip * 0.25;
 `;
 
-function leafMaterial(map, time) {
+// at night the cool ambient light lifts these photos far more than the palms' leaves
+// (measured twice as bright and cyan): dim them and take the blue out as night falls
+const NIGHT_TINT = "vec3( 0.14, 0.13, 0.095 )";
+
+function leafMaterial(map, time, night) {
+  // matte like the palms' leaves (no sheen of the sky on them), soft edges like theirs
   const material = new THREE.MeshStandardMaterial({
     map,
-    alphaTest: 0.5,
+    transparent: true,
+    alphaTest: 0.3,
     side: THREE.DoubleSide,
-    roughness: 0.62,
+    roughness: 0.9,
     metalness: 0,
+    envMapIntensity: 0.7,
   });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = time;
+    shader.uniforms.uNight = night;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>\n${VERTEX_HEAD}`)
       .replace(
@@ -119,7 +129,19 @@ function leafMaterial(map, time) {
         gl_Position = projectionMatrix * mvPosition;
         `,
       );
-    shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", FRAGMENT_COVERAGE);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nuniform float uNight;")
+      // leaves let light through: the back of a leaf is lit like its front, instead
+      // of going black where a card shows its back to the camera
+      .replace(
+        "#include <normal_fragment_begin>",
+        "#include <normal_fragment_begin>\n normal *= faceDirection;",
+      )
+      .replace("#include <map_fragment>", FRAGMENT_COVERAGE)
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>\n diffuseColor.rgb *= mix( vec3( 1.0 ), ${NIGHT_TINT}, uNight );`,
+      );
   };
   material.customProgramCacheKey = () => "hanging-vine-cards";
   return material;
@@ -145,9 +167,10 @@ export function createHangingVines() {
 
   const addCard = (x, y, z, height, cell, { yaw, lean = 0, tint, edge, phase, up = false, bend = 1 }) => {
     _position.set(x, y, z);
-    // up: crown cards pointing up and out over the edge instead of hanging
-    // (lean > 0 tips a hanging card's bottom out, a crown card's tip out)
-    _euler.set(up ? Math.PI + lean : -lean, yaw, 0, "YXZ");
+    // up: crown cards turned upright in their own plane and tipped out over the edge,
+    // their face toward the sky (lean > 0 tips a hanging card's bottom out, a crown
+    // card's tip out)
+    _euler.set(up ? lean : -lean, yaw, up ? Math.PI : 0, "YXZ");
     _rotation.setFromEuler(_euler);
     // z scales the bend over the edge: a chained card hangs straight
     _scale.set(height * CARD_ASPECT, height, height * CARD_ASPECT * bend);
@@ -162,9 +185,13 @@ export function createHangingVines() {
   };
 
   const shade = (layer) => {
-    // deep green like the palms, back strands in the shade of the front ones
-    const light = layer === 0 ? rand(0.42, 0.52) : rand(0.6, 0.78);
-    return new THREE.Color(light * rand(0.78, 0.9), light * rand(0.92, 1), light * rand(0.7, 0.82));
+    // the leaf photos are brighter and bluer than foliage in this light: bring them
+    // to the palms' dark olive, back strands in the shade of the front ones
+    // The photos keep their own olive (it matches the palms' leaves on screen), only
+    // darker: real ivy gives back about a quarter of what the sunlit wall behind it
+    // does. Back strands a little darker, never black.
+    const light = layer === 0 ? rand(0.31, 0.38) : rand(0.4, 0.52);
+    return new THREE.Color(light * rand(0.94, 1.02), light * rand(0.92, 0.98), light * rand(0.92, 1.02));
   };
 
   for (const edge of EDGES) {
@@ -225,7 +252,11 @@ export function createHangingVines() {
     }
   }
 
+  // back to front: blended edges then always land on what is behind them
+  cards.sort((a, b) => a.matrix.elements[14] - b.matrix.elements[14]);
+
   const time = { value: 0 };
+  const night = { value: 0 };
   const geometry = cardGeometry();
   const edges = new Float32Array(cards.length);
   const phases = new Float32Array(cards.length);
@@ -237,7 +268,7 @@ export function createHangingVines() {
   });
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
-  const material = leafMaterial(texture, time);
+  const material = leafMaterial(texture, time, night);
 
   const mesh = new THREE.InstancedMesh(geometry, material, cards.length);
   cards.forEach((card, i) => {
@@ -261,8 +292,10 @@ export function createHangingVines() {
 
   return {
     object: mesh,
-    update(seconds) {
+    // seconds, night: 0 (day) .. 1 (night)
+    update(seconds, nightAmount) {
       time.value = seconds;
+      night.value = nightAmount;
     },
     dispose() {
       geometry.dispose();
