@@ -1,116 +1,128 @@
 import * as THREE from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { VINE_LEAVES_URL } from "../../loading/sceneAssets";
 
 // Trailing plants spilling over the roof edges of the house front, so the bare upper
-// wall of the intro view gets some life: green pothos-like vines on the main wall,
-// bougainvillea (green leaves + magenta bracts) on the lower block to the right.
-// Fully procedural and light: one instanced leaf mesh (leaves and bracts share it,
-// colored per instance), one merged mesh of thin stems. Two draw calls, no textures,
-// nothing per frame but a time uniform: the breeze lives in the vertex shader.
-// (The sun lights this facade from the front and its shadow camera does not reach
-// it, so the vines do not cast shadows: they would cost passes and show nothing.)
+// wall of the intro view gets some life. Real leaf photos (ez-tree's ash and oak leaf
+// cards, MIT, see public/textures/NOTICE.txt) hang from the edges as bent cards that
+// chain into long strands, in a darker back layer and a brighter front one.
+// One instanced mesh, one 640x512 texture: one draw call, and alpha-tested, so no
+// sorting. The breeze lives in the vertex shader. (The sun lights this facade from the
+// front and its shadow camera does not reach it, so they cast no shadows.)
 
 // house model coordinates (same space as the GLB, see createTerraceRail)
 const EDGES = [
-  // main wall: cornice front at z 12.22, wall face 12.10, roof top 5.29.
-  // From the right of the round window to the corner of the block.
+  // main wall: cornice front at z 12.22, wall face 12.10, roof top 5.29. From the
+  // right of the round window to the block's corner, longer toward the corner.
   {
     top: 5.29,
-    edge: 12.24,
-    flowers: false,
+    edge: 12.22,
     clusters: [
-      { x: -1.85, strands: 4, length: [0.8, 1.45] }, // stays above the round window
-      { x: -0.95, strands: 6, length: [1.1, 2.5] },
-      { x: 0.05, strands: 5, length: [0.7, 1.9] },
-      { x: 0.92, strands: 7, length: [1.5, 3.2] }, // the long fall at the corner
+      { x: -2.05, strands: 2, length: [0.6, 1.1] },
+      { x: -1.25, strands: 3, length: [0.9, 1.7] },
+      { x: -0.35, strands: 2, length: [0.8, 1.4] },
+      { x: 0.45, strands: 3, length: [1.2, 2.2] },
+      { x: 1.05, strands: 4, length: [1.6, 2.8] },
     ],
   },
   // lower block on the right: upper band front at z 11.27, roof top 5.12
   {
     top: 5.12,
-    edge: 11.29,
-    flowers: true,
+    edge: 11.27,
     clusters: [
-      { x: 2.05, strands: 5, length: [1.0, 2.4] },
-      { x: 3.45, strands: 4, length: [0.7, 1.6] },
-      { x: 4.95, strands: 6, length: [1.2, 2.8] },
-      { x: 6.55, strands: 4, length: [0.8, 1.8] },
+      { x: 2.0, strands: 3, length: [0.9, 1.8] },
+      { x: 2.95, strands: 2, length: [0.6, 1.2] },
+      { x: 3.9, strands: 3, length: [1.0, 2.0] },
+      { x: 4.9, strands: 2, length: [0.7, 1.3] },
+      { x: 5.85, strands: 3, length: [1.1, 2.2] },
+      { x: 6.8, strands: 2, length: [0.7, 1.4] },
+      { x: 7.5, strands: 2, length: [0.6, 1.1] },
     ],
   },
 ];
 
-const OVER_EDGE = 0.06; // where a strand drops over the edge, below the roof top
-const LEAF_SPACING = 0.075; // along a strand
-const LEAF_SIZE = [0.12, 0.19];
-const BRACT_SIZE = [0.07, 0.1];
-const STEM_RADIUS = 0.007;
+const OVER_EDGE = 0.07; // where a strand drops over the edge, below the roof top
+// leaf cards: [width / height] of an atlas cell, real-size ranges (house units = m)
+const CARD_ASPECT = (330 / 524) * 0.85; // a little narrower than the photo: slimmer strands
+const ASH_HEIGHT = [0.7, 1.15]; // fine leaflets of ~8-12 cm
+const OAK_HEIGHT = [0.45, 0.7]; // broad lobed leaves, ivy-like
+const YAW = -0.42; // cards turn a little toward where the intro camera looks from
 
-// breeze: sideways swing that grows down the strand, a slow outward breath and a
-// small flutter of every leaf tip (in house units)
-const SWAY_GLSL = /* glsl */ `
-  attribute float aHang; // distance below the roof edge
+// bent card: hangs from the origin down to y -1, x -0.5..0.5; the top bends back over
+// the edge onto the roof (z < 0) like a stem coming out of a planter up there
+function cardGeometry() {
+  const geometry = new THREE.PlaneGeometry(1, 1, 1, 6);
+  const position = geometry.attributes.position;
+  const uv = geometry.attributes.uv;
+  for (let i = 0; i < position.count; i++) {
+    const down = 0.5 - position.getY(i); // 0 top .. 1 bottom
+    const back = Math.max(0, 1 - down / 0.22);
+    position.setXYZ(i, position.getX(i), -down + back * back * 0.05, -back * back * 0.18);
+    // the photo's stem end (bottom row) at the top of the card, its tip hanging down
+    uv.setY(i, down);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// breeze: sideways swing growing down the strand, a slow outward breath, and every
+// leaf tip fluttering a little (house units)
+const VERTEX_HEAD = /* glsl */ `
+  attribute float aEdge; // height of the roof edge this strand hangs from
   attribute float aPhase; // one per strand
+  attribute float aCell; // atlas cell: 0 ash, 1 oak
+  attribute float aFlip; // 1 = mirrored
   uniform float uTime;
-  uniform float uFlutter;
   vec3 vineSway( float hang, float phase, float tip ) {
     float bend = pow( max( hang, 0.0 ), 1.35 );
     float swing = sin( uTime * 1.25 + phase + hang * 1.6 ) * 0.7
       + sin( uTime * 2.6 + phase * 1.7 + hang * 3.1 ) * 0.3;
     float breath = 0.5 + 0.5 * sin( uTime * 0.8 + phase * 2.3 );
-    float flutter = sin( uTime * 5.3 + phase * 3.1 + hang * 7.0 ) * uFlutter * tip;
+    float flutter = sin( uTime * 5.3 + phase * 3.1 + hang * 7.0 ) * 0.012 * tip;
     return vec3( swing * 0.02 * bend, 0.0, breath * 0.012 * bend + flutter );
   }
 `;
 
-function swayMaterial(params, time, flutter, key) {
-  const material = new THREE.MeshStandardMaterial(params);
+const FRAGMENT_COVERAGE = /* glsl */ `
+  #include <map_fragment>
+  // alpha averages away in small mip levels and thin leaves would vanish with
+  // distance: scale it back up with the mip level (keeps the leaf cover)
+  vec2 texel = vMapUv * vec2( textureSize( map, 0 ) );
+  vec2 duvx = dFdx( texel );
+  vec2 duvy = dFdy( texel );
+  float mip = max( 0.0, 0.5 * log2( max( dot( duvx, duvx ), dot( duvy, duvy ) ) ) );
+  diffuseColor.a *= 1.0 + mip * 0.25;
+`;
+
+function leafMaterial(map, time) {
+  const material = new THREE.MeshStandardMaterial({
+    map,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide,
+    roughness: 0.62,
+    metalness: 0,
+  });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = time;
-    shader.uniforms.uFlutter = { value: flutter };
     shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", `#include <common>\n${SWAY_GLSL}`)
+      .replace("#include <common>", `#include <common>\n${VERTEX_HEAD}`)
+      .replace(
+        "#include <uv_vertex>",
+        /* glsl */ `#include <uv_vertex>
+        vMapUv.x = ( aCell + mix( vMapUv.x, 1.0 - vMapUv.x, aFlip ) ) * 0.5;`,
+      )
       .replace(
         "#include <project_vertex>",
         /* glsl */ `
-        vec4 mvPosition = vec4( transformed, 1.0 );
-        #ifdef USE_INSTANCING
-          mvPosition = instanceMatrix * mvPosition;
-        #endif
-        mvPosition.xyz += vineSway( aHang, aPhase, position.y );
+        vec4 mvPosition = instanceMatrix * vec4( transformed, 1.0 );
+        mvPosition.xyz += vineSway( aEdge - mvPosition.y, aPhase, uv.y );
         mvPosition = modelViewMatrix * mvPosition;
         gl_Position = projectionMatrix * mvPosition;
         `,
       );
+    shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", FRAGMENT_COVERAGE);
   };
-  material.customProgramCacheKey = () => key;
+  material.customProgramCacheKey = () => "hanging-vine-cards";
   return material;
-}
-
-// heart-shaped leaf: petiole at the origin, tip at +y 1, facing +z, folded a little
-// along the midrib so light runs across it. 11 vertices, 10 triangles.
-function leafGeometry() {
-  const points = [
-    [0, 0.06, 0.03], // 0 petiole
-    [0, 0.5, 0.045], // 1 middle of the midrib
-    [0, 1, 0], // 2 tip
-    [-0.36, 0, -0.02], // 3..6 left edge, lobe to tip
-    [-0.5, 0.3, -0.04],
-    [-0.4, 0.62, -0.03],
-    [-0.18, 0.88, -0.01],
-    [0.36, 0, -0.02], // 7..10 right edge
-    [0.5, 0.3, -0.04],
-    [0.4, 0.62, -0.03],
-    [0.18, 0.88, -0.01],
-  ];
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(points.flat(), 3));
-  // counter-clockwise seen from +z
-  geometry.setIndex([
-    0, 4, 3, 0, 1, 4, 1, 5, 4, 1, 6, 5, 1, 2, 6, //
-    0, 7, 8, 0, 8, 1, 1, 8, 9, 1, 9, 10, 1, 10, 2,
-  ]);
-  geometry.computeVertexNormals();
-  return geometry;
 }
 
 // small seeded random, the same plants on every visit
@@ -122,210 +134,141 @@ function random(seed) {
   };
 }
 
-const _x = new THREE.Vector3();
-const _y = new THREE.Vector3();
-const _z = new THREE.Vector3();
-const _roll = new THREE.Quaternion();
-
-// leaf matrix: base at `at`, pointing along `direction`, facing about `facing`
-function leafMatrix(at, direction, facing, roll, size) {
-  _y.copy(direction).normalize();
-  _z.copy(facing).addScaledVector(_y, -facing.dot(_y)).normalize();
-  _roll.setFromAxisAngle(_y, roll);
-  _z.applyQuaternion(_roll);
-  _x.crossVectors(_y, _z);
-  return new THREE.Matrix4()
-    .makeBasis(_x, _y, _z)
-    .scale(new THREE.Vector3(size, size, size))
-    .setPosition(at);
-}
+const _position = new THREE.Vector3();
+const _rotation = new THREE.Quaternion();
+const _euler = new THREE.Euler();
+const _scale = new THREE.Vector3();
 
 export function createHangingVines() {
   const rand = random(20251107);
-  const leaves = []; // { matrix, color, hang, phase }
-  const stems = [];
+  const cards = []; // { matrix, tint, edge, phase, cell, flip }
 
-  const green = new THREE.Color();
-  const leafColor = (young) =>
-    green
-      .setHSL(rand(0.24, 0.34), rand(0.38, 0.62), young ? rand(0.27, 0.36) : rand(0.13, 0.28))
-      .clone();
-  const bractColor = () =>
-    new THREE.Color().setHSL(rand(0.9, 0.955), rand(0.62, 0.8), rand(0.42, 0.55));
-
-  const addLeaf = (at, direction, facing, size, color, hang, phase) =>
-    leaves.push({
-      matrix: leafMatrix(at, direction, facing, rand(-0.45, 0.45), size),
-      color,
-      hang,
+  const addCard = (x, y, z, height, cell, { yaw, lean = 0, tint, edge, phase, up = false, bend = 1 }) => {
+    _position.set(x, y, z);
+    // up: crown cards pointing up and out over the edge instead of hanging
+    // (lean > 0 tips a hanging card's bottom out, a crown card's tip out)
+    _euler.set(up ? Math.PI + lean : -lean, yaw, 0, "YXZ");
+    _rotation.setFromEuler(_euler);
+    // z scales the bend over the edge: a chained card hangs straight
+    _scale.set(height * CARD_ASPECT, height, height * CARD_ASPECT * bend);
+    cards.push({
+      matrix: new THREE.Matrix4().compose(_position, _rotation, _scale),
+      tint,
+      edge,
       phase,
+      cell,
+      flip: rand() < 0.5 ? 1 : 0,
     });
+  };
 
-  // three papery bracts around a point, like a bougainvillea flower
-  const addBracts = (at, hang, phase) => {
-    const turn = rand(0, Math.PI * 2);
-    for (let k = 0; k < 3; k++) {
-      const angle = turn + (k * Math.PI * 2) / 3;
-      addLeaf(
-        at,
-        new THREE.Vector3(Math.cos(angle), Math.sin(angle) * 0.8 - 0.15, 0.55),
-        new THREE.Vector3(0, 0.2, 1),
-        rand(...BRACT_SIZE),
-        bractColor(),
-        hang,
-        phase,
-      );
-    }
+  const shade = (layer) => {
+    // deep green like the palms, back strands in the shade of the front ones
+    const light = layer === 0 ? rand(0.42, 0.52) : rand(0.6, 0.78);
+    return new THREE.Color(light * rand(0.78, 0.9), light * rand(0.92, 1), light * rand(0.7, 0.82));
   };
 
   for (const edge of EDGES) {
     const edgeY = edge.top - OVER_EDGE;
     for (const cluster of edge.clusters) {
-      // a mound of leaves on the edge, as if from a planter on the roof
-      const crown = 12 + Math.round(rand(0, 5));
-      for (let i = 0; i < crown; i++) {
-        const at = new THREE.Vector3(
-          cluster.x + rand(-0.42, 0.42),
-          edge.top + rand(-0.03, 0.1),
-          edge.edge + rand(-0.2, 0.02),
-        );
-        const direction = new THREE.Vector3(rand(-0.9, 0.9), rand(0.3, 0.95), rand(0.45, 1));
-        if (edge.flowers && rand() < 0.45) addBracts(at, 0, cluster.x);
-        else
-          addLeaf(at, direction, new THREE.Vector3(0, 0.8, 0.6), rand(0.15, 0.22), leafColor(false), 0, cluster.x);
+      const strands = [];
+      for (let i = 0; i < cluster.strands; i++) strands.push(1);
+      if (rand() < 0.6) strands.push(0); // a darker strand behind, now and then
+      for (const layer of strands) {
+        const x = cluster.x + rand(-0.24, 0.24);
+        const length = rand(...cluster.length) * (layer === 0 ? 0.8 : 1);
+        const phase = rand(0, Math.PI * 2);
+        const out = layer === 0 ? rand(0.03, 0.06) : rand(0.1, 0.18);
+        const yaw = YAW + rand(-0.32, 0.32);
+        const tint = shade(layer);
+        // a strand: one card, or a few chained down (each starts on its upper one)
+        let y = edge.top + 0.03;
+        let hung = 0;
+        while (hung < length) {
+          const oak = rand() < 0.12;
+          const height = oak ? rand(...OAK_HEIGHT) : rand(...ASH_HEIGHT);
+          const cardYaw = yaw + rand(-0.12, 0.12);
+          // turned cards reach back by half their width: keep that off the wall
+          const reach = 0.5 * height * CARD_ASPECT * Math.abs(Math.sin(cardYaw));
+          addCard(x + rand(-0.03, 0.03), y, edge.edge + reach + out, height, oak ? 1 : 0, {
+            yaw: cardYaw,
+            lean: rand(-0.02, 0.08),
+            tint,
+            edge: edgeY,
+            phase,
+            bend: hung === 0 ? 1 : 0.05,
+          });
+          const step = height * rand(0.82, 0.92);
+          y -= step;
+          hung += step;
+        }
       }
 
-      // the strands falling from it
-      for (let s = 0; s < cluster.strands; s++) {
-        const length = rand(...cluster.length);
-        const phase = rand(0, Math.PI * 2);
-        const startX = cluster.x + rand(-0.36, 0.36);
-        const wander = [rand(0.02, 0.06), rand(1.5, 3.2), rand(0, 6.28)];
-        const drift = rand(-0.08, 0.08);
-        const bow = rand(0.03, 0.09);
-        const pointAt = (t) => {
-          // t: 0 on the roof just behind the edge, then over the edge and down
-          if (t < 0) return new THREE.Vector3(startX, edge.top + 0.03, edge.edge - 0.12);
-          const u = t / length;
-          return new THREE.Vector3(
-            startX + Math.sin(t * wander[1] + wander[2]) * wander[0] * Math.min(1, t / 0.5) + drift * t,
-            edgeY - t,
-            edge.edge + 0.03 + Math.sin(Math.PI * u) * bow,
-          );
-        };
-
-        const points = [pointAt(-1)];
-        for (let t = 0; t <= length; t += 0.08) points.push(pointAt(t));
-        const tube = new THREE.TubeGeometry(
-          new THREE.CatmullRomCurve3(points),
-          points.length,
-          STEM_RADIUS,
-          3,
-          false,
+      // a few leafy tufts on the edge, as if from a planter up on the roof
+      const tufts = 3 + Math.round(rand(0, 2));
+      for (let i = 0; i < tufts; i++) {
+        addCard(
+          cluster.x + rand(-0.38, 0.38),
+          edge.top - 0.02,
+          edge.edge - rand(0.02, 0.1),
+          rand(0.3, 0.46),
+          rand() < 0.5 ? 1 : 0,
+          {
+            yaw: YAW + rand(-0.5, 0.5),
+            lean: rand(0.5, 1.0),
+            tint: shade(rand() < 0.4 ? 0 : 1),
+            edge: edgeY,
+            phase: rand(0, Math.PI * 2),
+            up: true,
+          },
         );
-        const count = tube.attributes.position.count;
-        const hang = new Float32Array(count);
-        for (let i = 0; i < count; i++) hang[i] = Math.max(0, edgeY - tube.attributes.position.getY(i));
-        tube.setAttribute("aHang", new THREE.BufferAttribute(hang, 1));
-        tube.setAttribute("aPhase", new THREE.BufferAttribute(new Float32Array(count).fill(phase), 1));
-        tube.deleteAttribute("uv");
-        stems.push(tube);
-
-        // leaves alternate left and right down the stem, smaller toward the young tip
-        let side = rand() < 0.5 ? -1 : 1;
-        for (let t = 0.04; t < length; t += LEAF_SPACING * rand(0.8, 1.2)) {
-          const at = pointAt(t);
-          const taper = 1 - 0.45 * (t / length) ** 2;
-          const young = t > length - 0.35;
-          if (edge.flowers && rand() < 0.22) {
-            addBracts(at, t, phase);
-          } else {
-            addLeaf(
-              at,
-              new THREE.Vector3(side * rand(0.4, 0.8), rand(-0.85, -0.45), rand(0.3, 0.6)),
-              new THREE.Vector3(0, 0.25, 1),
-              rand(...LEAF_SIZE) * taper,
-              leafColor(young),
-              t,
-              phase,
-            );
-          }
-          // fuller right under the edge, thinning out down the strand like a real vine
-          if (t < 0.55) {
-            addLeaf(
-              at,
-              new THREE.Vector3(-side * rand(0.4, 0.8), rand(-0.7, -0.2), rand(0.4, 0.7)),
-              new THREE.Vector3(0, 0.3, 1),
-              rand(...LEAF_SIZE),
-              leafColor(false),
-              t,
-              phase,
-            );
-          }
-          side = -side;
-        }
       }
     }
   }
 
   const time = { value: 0 };
+  const geometry = cardGeometry();
+  const edges = new Float32Array(cards.length);
+  const phases = new Float32Array(cards.length);
+  const cells = new Float32Array(cards.length);
+  const flips = new Float32Array(cards.length);
 
-  // leaves and bracts: one instanced mesh
-  const leafMaterial = swayMaterial(
-    { color: "#ffffff", roughness: 0.6, metalness: 0, side: THREE.DoubleSide },
-    time,
-    0.012,
-    "hanging-vine-leaves",
-  );
-  const geometry = leafGeometry();
-  const hangs = new Float32Array(leaves.length);
-  const phases = new Float32Array(leaves.length);
-  const leafMesh = new THREE.InstancedMesh(geometry, leafMaterial, leaves.length);
-  leaves.forEach((leaf, i) => {
-    leafMesh.setMatrixAt(i, leaf.matrix);
-    leafMesh.setColorAt(i, leaf.color);
-    hangs[i] = leaf.hang;
-    phases[i] = leaf.phase;
+  const texture = new THREE.TextureLoader().load(VINE_LEAVES_URL, () => {
+    mesh.visible = true; // never show bare cards before the leaves are in
   });
-  geometry.setAttribute("aHang", new THREE.InstancedBufferAttribute(hangs, 1));
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  const material = leafMaterial(texture, time);
+
+  const mesh = new THREE.InstancedMesh(geometry, material, cards.length);
+  cards.forEach((card, i) => {
+    mesh.setMatrixAt(i, card.matrix);
+    mesh.setColorAt(i, card.tint);
+    edges[i] = card.edge;
+    phases[i] = card.phase;
+    cells[i] = card.cell;
+    flips[i] = card.flip;
+  });
+  geometry.setAttribute("aEdge", new THREE.InstancedBufferAttribute(edges, 1));
   geometry.setAttribute("aPhase", new THREE.InstancedBufferAttribute(phases, 1));
-  leafMesh.name = "HangingVineLeaves";
-  leafMesh.castShadow = false;
-  leafMesh.receiveShadow = false;
-  leafMesh.computeBoundingSphere();
-  leafMesh.boundingSphere.radius += 0.2; // room for the sway
-
-  // stems: one static merged mesh
-  const stemGeometry = mergeGeometries(stems);
-  stems.forEach((tube) => tube.dispose());
-  const stemMaterial = swayMaterial(
-    { color: "#46562f", roughness: 0.8, metalness: 0 },
-    time,
-    0,
-    "hanging-vine-stems",
-  );
-  const stemMesh = new THREE.Mesh(stemGeometry, stemMaterial);
-  stemMesh.name = "HangingVineStems";
-  stemMesh.castShadow = false;
-  stemMesh.receiveShadow = false;
-  stemGeometry.computeBoundingSphere();
-  stemGeometry.boundingSphere.radius += 0.2;
-
-  const group = new THREE.Group();
-  group.name = "HangingVines";
-  group.add(stemMesh, leafMesh);
+  geometry.setAttribute("aCell", new THREE.InstancedBufferAttribute(cells, 1));
+  geometry.setAttribute("aFlip", new THREE.InstancedBufferAttribute(flips, 1));
+  mesh.name = "HangingVines";
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  mesh.visible = false;
+  mesh.computeBoundingSphere();
+  mesh.boundingSphere.radius += 0.2; // room for the sway
 
   return {
-    object: group,
+    object: mesh,
     update(seconds) {
       time.value = seconds;
     },
     dispose() {
       geometry.dispose();
-      leafMaterial.dispose();
-      leafMesh.dispose();
-      stemGeometry.dispose();
-      stemMaterial.dispose();
+      material.dispose();
+      texture.dispose();
+      mesh.dispose();
     },
   };
 }
