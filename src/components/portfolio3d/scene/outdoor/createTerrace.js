@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { createPierPlants } from "./createPierPlants";
 import { createTerraceRail } from "./createTerraceRail";
 import { createStringLights } from "./createStringLights";
+import { createHangingVines } from "./createHangingVines";
 
 // Everything added onto the front terrace, in house model coordinates. The group lives
 // outside <Center> (so it never changes how the house gets centered) and copies the
@@ -14,7 +15,8 @@ export function createTerrace(house) {
   const plants = createPierPlants(house); // null if the model ever changes
   const rail = createTerraceRail(house);
   const lights = createStringLights(rail.postTops);
-  const parts = [plants, rail, lights].filter(Boolean);
+  const vines = createHangingVines();
+  const parts = [plants, rail, lights, vines].filter(Boolean);
   parts.forEach((part) => group.add(part.object));
 
   const lastHouseMatrix = new THREE.Matrix4();
@@ -35,6 +37,7 @@ export function createTerrace(house) {
       cameraInHouse.setFromMatrixPosition(camera.matrixWorld).applyMatrix4(toHouse);
       plants?.update(cameraInHouse, time);
       lights?.update(time, night);
+      vines.update(time);
     },
     dispose() {
       parts.forEach((part) => part.dispose());
