@@ -87,12 +87,15 @@ const VERTEX_HEAD = /* glsl */ `
 const FRAGMENT_COVERAGE = /* glsl */ `
   #include <map_fragment>
   // alpha averages away in small mip levels and thin leaves would vanish with
-  // distance: scale it back up with the mip level (keeps the leaf cover)
+  // distance: scale it back up with the mip level (keeps the leaf cover).
+  // Never past 1: the leaves are blended, and an alpha above 1 would darken or
+  // brighten a leaf by whatever is behind it (its color changed as it swayed
+  // in front of the bright sky and wall)
   vec2 texel = vMapUv * vec2( textureSize( map, 0 ) );
   vec2 duvx = dFdx( texel );
   vec2 duvy = dFdy( texel );
   float mip = max( 0.0, 0.5 * log2( max( dot( duvx, duvx ), dot( duvy, duvy ) ) ) );
-  diffuseColor.a *= 1.0 + mip * 0.25;
+  diffuseColor.a = min( diffuseColor.a * ( 1.0 + mip * 0.25 ), 1.0 );
 `;
 
 // at night the cool ambient light lifts these photos far more than the palms' leaves
